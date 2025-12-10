@@ -1,0 +1,82 @@
+.ant-modal .ant-modal-title,
+.ant-drawer .ant-drawer-title,
+.ant-drawer .ant-drawer-close,
+.ant-modal .ant-modal-close-x {
+    font-size: 24px;
+    color: #012970;
+}
+
+.ant-form-item .ant-form-item-label > label {
+    font-size: 16px;
+    color: #012970;
+}
+
+.ant-breadcrumb a {
+    height: 24px;
+}
+
+.ant-menu-light .ant-menu-item:not(.ant-menu-item-selected):not(.ant-menu-submenu-selected):hover {
+    color: #4154f1;
+}
+
+.ant-menu-light .ant-menu-item-selected, .ant-menu-light>.ant-menu .ant-menu-item-selected {
+    color: #4154f1 !important;
+    font-weight: 600;
+}
+
+.ant-menu-light .ant-menu-item, .ant-menu-light>.ant-menu .ant-menu-item {
+    color: #012970;
+    font-weight: 600;
+}
+
+.ant-menu-light .ant-menu-submenu-title:hover {
+    color: #4154f1;
+}
+
+.ant-menu-light>.ant-menu .ant-menu-item:not(.ant-menu-item-selected):not(.ant-menu-submenu-selected):hover {
+    color: #4154f1;
+}
+
+.ant-select-single .ant-select-selector {
+    font-size: 16px;
+    height: 36px !important;
+}
+
+.ant-select-item .ant-select-item-option-content {
+    font-size: 16px;
+}
+
+textarea.ant-input {
+    font-size: 16px;
+}
+
+.ant-select {
+    display: flex;
+    align-items: center;
+}
+
+.ant-picker .ant-picker-input >input,
+.ant-picker-time-panel-column,
+.anticon-search {
+    font-size: 16px;
+}
+
+.ant-message {
+    font-size: 16px;
+}
+
+.ant-message-notice-content {
+    padding: 12px 24px;
+    border-radius: 8px;
+}
+
+/* Thêm dòng này để align icon và text */
+.ant-message-custom-content {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* hoặc 12px nếu muốn cách ra thêm giữa icon và chữ */
+}
+
+.ant-table-cell {
+    padding: 12px 8px !important;
+}

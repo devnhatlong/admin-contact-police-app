@@ -1,0 +1,13 @@
+.ant-menu-submenu-title .anticon svg,
+.ant-menu-title-content {
+    font-size: 16px; /* Tăng kích thước icon */
+}
+
+.ant-menu-light .ant-menu-submenu-title {
+    color: #012970; /* Màu chữ của menu */
+}
+
+.ant-menu-light .ant-menu-item-selected,
+.ant-menu-light .ant-menu-submenu-selected >.ant-menu-submenu-title {
+    color: #4154f1;
+}

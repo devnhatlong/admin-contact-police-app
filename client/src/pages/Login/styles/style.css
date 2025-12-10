@@ -1,0 +1,165 @@
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+    background: linear-gradient(135deg, #dfcc80, #eadda9);
+    /* background: #EBEBEB; */
+}
+
+.login-box {
+    position: relative;
+    display: flex;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    width: 1024px;
+    max-width: 100%;
+    height: 600px;
+}
+
+.login-image {
+    position: relative;
+    flex: 1;
+    background: #eadda9;
+    padding: 10px;
+}
+
+.circle-login {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%; /* Adjust size as needed */
+    height: 100%; /* Adjust size as needed */
+    background: url("../../../assets/images/circle.png") no-repeat center center;
+    background-size: contain;
+    animation: rotateBackground 30s linear infinite;
+}
+
+.text-login {
+    position: absolute;
+    top: 66%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%; /* Adjust size as needed */
+    height: 100%; /* Adjust size as needed */
+    background-image: url("../../../assets/images/background_text.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+.login-form-container {
+    width: 40%;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.login-header h2 {
+    margin: 0;
+    color: #012970;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #4a4a4a;
+}
+
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.input-icon {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    color: #a0a0a0;
+}
+
+.login-input {
+    width: 100%;
+    padding: 10px 10px 10px 40px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.password-toggle-icon {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #a0a0a0;
+}
+
+.login-options {
+    text-align: center;
+}
+
+.login-button {
+    width: 100%;
+    padding: 10px;
+    background: #2BB3E7;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.login-button:hover {
+    background: #2298c7;
+}
+
+.login-links {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    color: #012970;
+}
+
+@keyframes rotateBackground {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+}
+
+/* Media query to hide login-image on small screens */
+@media (max-width: 992px) {
+    .login-box {
+        /* height: auto; */
+        width: auto;
+    }
+
+    .login-image {
+        display: none;
+    }
+
+    .login-form-container {
+        width: 100%;
+    }
+}
