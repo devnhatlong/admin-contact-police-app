@@ -243,7 +243,7 @@ const getUser = async (userId) => {
 const getUserById = async (id) => {
     const user = await getUser(id);
     if (!user) {
-        throw new Error("Không tìm thấy người dùng");
+        return null;
     }
     return user;
 };

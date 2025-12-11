@@ -97,7 +97,7 @@ const userService = {
     },
     getUsers: async (page, limit, fields, sort) => {
         try {
-            const response = await axiosJWT.get(`${BASE_URL}/get-all-user`, {
+            const response = await axiosJWT.get(`${BASE_URL}/`, {
                 params: { page, limit, fields, sort }
             });
             return response.data;
@@ -108,7 +108,7 @@ const userService = {
     },
     getDetailUser: async (id) => {
         try {
-            const response = await axiosJWT.get(`${BASE_URL}/get-detail-user/${id}`);
+            const response = await axiosJWT.get(`${BASE_URL}/${id}`);
             return response.data;
         } 
         catch (error) {
@@ -135,7 +135,7 @@ const userService = {
     },
     passwordChangedByAdmin: async (id, data) => {
         try {
-            const response = await axiosJWT.put(`${BASE_URL}/change-password-by-admin/${id}`, data);
+            const response = await axiosJWT.put(`${BASE_URL}/${id}/change-password`, data);
             return response.data;
         } 
         catch (error) {
@@ -144,7 +144,7 @@ const userService = {
     },
     passwordChangedByUser: async (data) => {
         try {
-            const response = await axiosJWT.put(`${BASE_URL}/change-password-by-user/`, data);
+            const response = await axiosJWT.put(`${BASE_URL}/change-password`, data);
             return response.data;
         } 
         catch (error) {
@@ -153,7 +153,7 @@ const userService = {
     },
     deleteUser: async (id) => {
         try {
-            const response = await axiosJWT.delete(`${BASE_URL}/delete-user/${id}`);
+            const response = await axiosJWT.delete(`${BASE_URL}/${id}`);
             return response.data;
         } 
         catch (error) {
@@ -162,7 +162,7 @@ const userService = {
     },
     deleteMultipleUsers: async (ids) => {
         try {
-            const response = await axiosJWT.delete(`${BASE_URL}/delete-multiple-users`, { data: { ids } });
+            const response = await axiosJWT.delete(`${BASE_URL}/`, { data: { ids } });
             return response.data;
         } catch (error) {
             console.log(error);

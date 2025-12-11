@@ -163,12 +163,17 @@ const getUserById = asyncHandler(async (req, res) => {
     
     const response = await UserService.getUserById(id);
 
-    res.status(response ? 200 : 404).json({
-        success: !!response,
-        data: response || null,
-        message: response
-            ? "Lấy thông tin người dùng thành công"
-            : "Không tìm thấy người dùng",
+    if (!response) {
+        return res.status(404).json({
+            success: false,
+            message: "Không tìm thấy người dùng",
+        });
+    }
+
+    res.status(200).json({
+        success: true,
+        data: response,
+        message: "Lấy thông tin người dùng thành công",
     });
 });
 

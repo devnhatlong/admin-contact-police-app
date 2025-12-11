@@ -200,23 +200,26 @@ export const AdminUser = () => {
         });
     }
 
-    useEffect(() => {
-        query.refetch();
-        setIsLoadingResetFilter(false);
-    }, [isLoadingResetFilter]);
-
-    const handleResetAllFilter = () => {
-        setIsLoadingResetFilter(true);
-        setColumnFilters("");
-        setFilters("");
-    }
-
     const query = useQuery({
-        queryKey: ['allRecords'],
+        queryKey: ['users', pagination.currentPage, pagination.pageSize, filters],
         queryFn: () => getUsers(pagination.currentPage, pagination.pageSize, filters),
         retry: 3,
         retryDelay: 1000,
     });
+
+    useEffect(() => {
+        if (isLoadingResetFilter) {
+            query.refetch().finally(() => setIsLoadingResetFilter(false));
+        }
+    }, [isLoadingResetFilter, query]);
+
+    const handleResetAllFilter = () => {
+        setColumnFilters({});
+        setFilters({});
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        setResetSelection((prev) => !prev);
+        setIsLoadingResetFilter(true);
+    }
 
     const { isLoading: isLoadingAllRecords, data: allRecords } = query;
 
@@ -283,7 +286,7 @@ export const AdminUser = () => {
 
     useEffect(() => {
         query.refetch();
-    }, [pagination]);
+    }, [pagination, query]);
 
     const handleChangePasswordByAdmin = async () => {
         mutationPasswordChangedByAdmin.mutate(
@@ -348,21 +351,24 @@ export const AdminUser = () => {
     }
 
     useEffect(() => {
-        if (allRecords?.data) {
+        if (allRecords?.data || allRecords?.items) {
             const updatedDataTable = fetchDataForDataTable(allRecords);
             setDataTable(updatedDataTable);
         }
     }, [allRecords]);
 
     const fetchDataForDataTable = (allRecords) => {
-        return allRecords?.data?.map((user) => {
-            return {
+        const records = allRecords?.data || allRecords?.items || [];
+        return records.map((user) => ({
                 ...user, 
-                key: user._id,
-                createdAt: user.createdAt ? <Moment format="DD/MM/YYYY HH:mm">{user.createdAt.toDate ? user.createdAt.toDate() : user.createdAt}</Moment> : '',
-                updatedAt: user.updatedAt ? <Moment format="DD/MM/YYYY HH:mm">{user.updatedAt.toDate ? user.updatedAt.toDate() : user.updatedAt}</Moment> : '',
-            };
-        });
+            key: user._id || user.id,
+            createdAt: user.createdAt
+                ? <Moment format="DD/MM/YYYY HH:mm">{user.createdAt.toDate ? user.createdAt.toDate() : user.createdAt}</Moment>
+                : '',
+            updatedAt: user.updatedAt
+                ? <Moment format="DD/MM/YYYY HH:mm">{user.updatedAt.toDate ? user.updatedAt.toDate() : user.updatedAt}</Moment>
+                : '',
+        }));
     };
 
     const handleOnChange = (name, value) => {
