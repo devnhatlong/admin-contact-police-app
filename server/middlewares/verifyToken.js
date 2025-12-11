@@ -12,7 +12,7 @@ const verifyAccessToken = asyncHandler(async (req, res, next) => {
                     message: "Invalid access token"
                 });
             }
-            // decode = {_id: uid, role, departmentId}
+            // decode = {_id: uid, role}
             req.user = decode;
             next();
         });

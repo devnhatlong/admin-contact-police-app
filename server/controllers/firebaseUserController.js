@@ -1,98 +1,96 @@
 require('dotenv').config();
 const asyncHandler = require("express-async-handler");
-const UserService = require("../services/userService");
-const Department = require("../models/departmentModel");
+const UserService = require("../services/firebaseUserService");
 const jwt = require("jsonwebtoken");
 const { generateAccessToken } = require("../middlewares/jwt");
-const User = require("../models/userModel");
-const xlsx = require('xlsx');
+const { getFirestoreDb } = require("../config/firebase");
 const crypto = require("crypto");
 
-const importFromExcel = async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded' });
-        }
+// const importFromExcel = async (req, res) => {
+//     try {
+//         if (!req.file) {
+//             return res.status(400).json({ message: 'No file uploaded' });
+//         }
 
-        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const data = xlsx.utils.sheet_to_json(sheet);
+//         const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+//         const sheetName = workbook.SheetNames[0];
+//         const sheet = workbook.Sheets[sheetName];
+//         const data = xlsx.utils.sheet_to_json(sheet);
 
-        const errors = [];
-        let successCount = 0;
+//         const errors = [];
+//         let successCount = 0;
 
-        for (let i = 0; i < data.length; i++) {
-            const row = data[i];
-            const { userName, departmentName, role } = row;
+//         for (let i = 0; i < data.length; i++) {
+//             const row = data[i];
+//             const { userName, departmentName, role } = row;
 
-            // Kiểm tra nếu thiếu thông tin bắt buộc
-            if (!userName || !departmentName) {
-                errors.push({
-                    row: i + 1,
-                    message: "Thiếu thông tin bắt buộc (userName, departmentName)",
-                });
-                continue;
-            }
+//             // Kiểm tra nếu thiếu thông tin bắt buộc
+//             if (!userName || !departmentName) {
+//                 errors.push({
+//                     row: i + 1,
+//                     message: "Thiếu thông tin bắt buộc (userName, departmentName)",
+//                 });
+//                 continue;
+//             }
 
-            // Trim departmentName để loại bỏ khoảng trắng thừa
-            const trimmedDepartmentName = departmentName.trim();
+//             // Trim departmentName để loại bỏ khoảng trắng thừa
+//             const trimmedDepartmentName = departmentName.trim();
 
-            // Kiểm tra xem departmentName có tồn tại trong departmentModel hay không
-            const department = await Department.findOne({ departmentName: trimmedDepartmentName });
-            if (!department) {
-                errors.push({
-                    row: i + 1,
-                    message: `Đơn vị không tồn tại (departmentName: ${trimmedDepartmentName})`,
-                });
-                continue;
-            }
+//             // Kiểm tra xem departmentName có tồn tại trong departmentModel hay không
+//             const department = await Department.findOne({ departmentName: trimmedDepartmentName });
+//             if (!department) {
+//                 errors.push({
+//                     row: i + 1,
+//                     message: `Đơn vị không tồn tại (departmentName: ${trimmedDepartmentName})`,
+//                 });
+//                 continue;
+//             }
 
-            // Kiểm tra xem người dùng đã tồn tại chưa
-            const existingUser = await User.findOne({ userName });
-            if (existingUser) {
-                errors.push({
-                    row: i + 1,
-                    message: `Người dùng đã tồn tại (userName: ${userName})`,
-                });
-                continue;
-            }
+//             // Kiểm tra xem người dùng đã tồn tại chưa
+//             const existingUser = await User.findOne({ userName });
+//             if (existingUser) {
+//                 errors.push({
+//                     row: i + 1,
+//                     message: `Người dùng đã tồn tại (userName: ${userName})`,
+//                 });
+//                 continue;
+//             }
 
-            // Tạo mật khẩu mặc định
-            const hashedPassword = process.env.DEFAULT_PASSWORD;
-            const hashedSecondaryPassword = process.env.SECONDARY_PASSWORD;
+//             // Tạo mật khẩu mặc định
+//             const hashedPassword = process.env.DEFAULT_PASSWORD;
+//             const hashedSecondaryPassword = process.env.SECONDARY_PASSWORD;
 
-            // Tạo mới người dùng
-            const newUser = new User({
-                userName,
-                password: hashedPassword,
-                secondaryPassword: hashedSecondaryPassword,
-                departmentId: department._id, // Sử dụng departmentId từ departmentModel
-                role: role || 'user', // Mặc định role là 'user' nếu không có
-            });
+//             // Tạo mới người dùng
+//             const newUser = new User({
+//                 userName,
+//                 password: hashedPassword,
+//                 secondaryPassword: hashedSecondaryPassword,
+//                 departmentId: department._id, // Sử dụng departmentId từ departmentModel
+//                 role: role || 'user', // Mặc định role là 'user' nếu không có
+//             });
 
-            await newUser.save();
-            successCount++;
-        }
+//             await newUser.save();
+//             successCount++;
+//         }
 
-        res.status(200).json({
-            success: true,
-            message: "Import hoàn tất",
-            successCount,
-            errorCount: errors.length,
-            errors,
-        });
-    } catch (error) {
-        console.error('Error importing users:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-};
+//         res.status(200).json({
+//             success: true,
+//             message: "Import hoàn tất",
+//             successCount,
+//             errorCount: errors.length,
+//             errors,
+//         });
+//     } catch (error) {
+//         console.error('Error importing users:', error);
+//         res.status(500).json({ message: 'Internal server error' });
+//     }
+// };
 
 const createUser = asyncHandler(async (req, res) => {
-    const { userName, password, departmentId, role } = req.body;
-
-    if (!userName || !password || !departmentId || !role) {
-        throw new Error("Thiếu thông tin");
+    const { userName, password, role } = req.body;
+    
+    if (!userName || !password || !role) {
+        throw new Error("Thiếu thông tin bắt buộc (userName, password, role)");
     }
 
     const response = await UserService.createUser(req.body);
@@ -188,11 +186,11 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     // verify token
     const result = await jwt.verify(refreshTokenFromBody, process.env.JWT_SECRET);
 
-    const response = await User.findOne({ _id: result._id, refreshToken: refreshTokenFromBody });
+    const response = await UserService.getUserByRefreshToken(result._id, refreshTokenFromBody);
         
     return res.status(200).json({
         success: response ? true : false,
-        newAccessToken: response ? generateAccessToken(response._id, response.role, response.departmentId) : "Refresh token not matched"
+        newAccessToken: response ? generateAccessToken(response.id, "user") : "Refresh token not matched"
     });
 });
 
@@ -201,7 +199,7 @@ const logout = asyncHandler(async(req, res) => {
     const refreshTokenFromBody = req.body.refreshToken;
 
     // Update refresh token in db
-    await User.findOneAndUpdate({refreshToken: refreshTokenFromBody}, {refreshToken: ""}, {new: true});
+    await UserService.logout(refreshTokenFromBody);
 
     // Delete refresh token ib cookie browser
     // res.clearCookie("refreshToken", {
@@ -225,61 +223,20 @@ const logout = asyncHandler(async(req, res) => {
  * If same => change password
 */
 
-const forgotPassword = asyncHandler(async (req, res) => {
-    const { email } = req.query;
+// Đã loại bỏ forgotPassword và resetPassword vì không có passwordResetToken field
+// const forgotPassword = asyncHandler(async (req, res) => {
+//     return res.status(501).json({
+//         success: false,
+//         message: "Password reset functionality not available"
+//     });
+// });
 
-    if (!email) throw new Error("Missing email");
-
-    const user = await User.findOne({email: email});
-
-    if (!user) throw new Error("User not found");
-
-    const resetToken = user.createPasswordChangedToken();
-    
-    await user.save();
-
-    const html = `
-        <h1>Password Change Request</h1>
-        <div>We've received a password change request for your Cuahangdientu account.</div>
-        <div>This link will expire in 15 minutes. If you did not request a password change, please ignore this email, no changes will be made to your account.</div>
-        <div>To change your password, click the link below:</div>
-        <a href="${process.env.URL_SERVER}/api/user/reset-password/${resetToken}">Click here</a>
-    `;
-
-    const data = {
-        email: email,
-        html: html
-    }
-
-    const result = await sendMail(data);
-
-    return res.status(200).json({
-        success: true,
-        message: result
-    });
-});
-
-const resetPassword = asyncHandler(async (req, res) => {
-    const { password, token } = req.body;
-
-    if (!password || !token) throw new Error("Missing input");
-
-    const passwordResetToken = crypto.createHash("sha256").update(token).digest("hex");
-    const user = await User.findOne({passwordResetToken: passwordResetToken, passwordResetExpires: {$gt: Date.now()}}); // passwordResetExpires > Date.now()
-
-    if (!user) throw new Error("Invalid reset token");
-
-    user.password = password;
-    user.passwordResetToken = undefined;
-    user.passwordChangedAt = Date.now();
-    user.passwordResetExpires = undefined;
-    await user.save();
-
-    return res.status(200).json({
-        success: user ? true : false,
-        message: user ? "Updated password" : "Something went wrong"
-    });
-});
+// const resetPassword = asyncHandler(async (req, res) => {
+//     return res.status(501).json({
+//         success: false,
+//         message: "Password reset functionality not available"
+//     });
+// });
 
 // const getUsers = asyncHandler(async (req, res) => { 
 //     const response = await User.find().select("-password -refreshToken -role -passwordChangedAt -passwordResetExpires -passwordResetToken");;
@@ -292,11 +249,11 @@ const resetPassword = asyncHandler(async (req, res) => {
 
 const updateUser = asyncHandler(async (req, res) => {
     const { _id } = req.user;
-    const { userName, departmentId, role } = req.body;
+    const { userName, role } = req.body;
 
     // Kiểm tra nếu thiếu thông tin bắt buộc
-    if (!userName || !departmentId || !role) {
-        throw new Error("Thiếu thông tin bắt buộc (userName, departmentId, role)");
+    if (!userName || !role) {
+        throw new Error("Thiếu thông tin bắt buộc (userName, role)");
     }
 
     const response = await UserService.updateUser(_id, req.body);
@@ -374,14 +331,13 @@ const deleteMultipleUsers = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-    importFromExcel,
     createUser,
     login,
     getUser,
     refreshAccessToken,
     logout,
-    forgotPassword,
-    resetPassword,
+    // forgotPassword, // Đã loại bỏ
+    // resetPassword, // Đã loại bỏ
     getUsers,
     getUserById,
     deleteUser,

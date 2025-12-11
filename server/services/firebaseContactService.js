@@ -1,55 +1,41 @@
 const { getFirestoreDb, getFirebaseAdmin } = require("../config/firebase");
 
-const COLLECTION_NAME = process.env.FIREBASE_COMMUNES_COLLECTION || "communes";
+const COLLECTION_NAME = process.env.FIREBASE_CONTACTS_COLLECTION || "contacts";
 
-const mapCommuneDoc = (doc) => ({
+const mapContactDoc = (doc) => ({
     id: doc.id,
     ...doc.data(),
 });
 
-const parseNumber = (value) => {
-    const num = Number(value);
-    return Number.isFinite(num) ? num : null;
-};
-
-const buildCommunePayload = (data, includeTimestamps = true) => {
+const buildContactPayload = (data, includeTimestamps = true) => {
     const admin = getFirebaseAdmin();
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
 
-    const commune = {
+    const contact = {
         ma_xa: data.ma_xa,
         ten_xa: data.ten_xa,
-        name: data.name,
-        loai: data.loai,
-        cap: parseNumber(data.cap),
-        ma_tinh: data.ma_tinh,
-        ten_tinh: data.ten_tinh,
-        dan_so: parseNumber(data.dan_so),
-        dtich_km2: parseNumber(data.dtich_km2),
-        matdo_km2: parseNumber(data.matdo_km2),
-        address: data.address,
-        tru_so: data.tru_so,
-        sap_nhap: data.sap_nhap,
+        chief: data.chief,
+        mobile: data.mobile ?? null,
     };
 
-    if (!includeTimestamps) return commune;
+    if (!includeTimestamps) return contact;
 
     return {
-        ...commune,
+        ...contact,
         createdAt: timestamp,
         updatedAt: timestamp,
     };
 };
 
-const createCommune = async (payload) => {
+const createContact = async (payload) => {
     const db = getFirestoreDb();
-    const data = buildCommunePayload(payload);
+    const data = buildContactPayload(payload);
     const docRef = await db.collection(COLLECTION_NAME).add(data);
     const created = await docRef.get();
-    return mapCommuneDoc(created);
+    return mapContactDoc(created);
 };
 
-const listCommunes = async ({ page = 1, pageSize = 20 }) => {
+const listContacts = async ({ page = 1, pageSize = 20 }) => {
     const db = getFirestoreDb();
     const limit = Number(pageSize) > 0 ? Number(pageSize) : 20;
     const offset = (Number(page) > 0 ? Number(page) - 1 : 0) * limit;
@@ -64,28 +50,28 @@ const listCommunes = async ({ page = 1, pageSize = 20 }) => {
     const totalSnapshot = await db.collection(COLLECTION_NAME).count().get();
 
     return {
-        items: querySnapshot.docs.map(mapCommuneDoc),
+        items: querySnapshot.docs.map(mapContactDoc),
         total: totalSnapshot.data().count,
         page: Number(page) || 1,
         pageSize: limit,
     };
 };
 
-const getCommune = async (id) => {
+const getContact = async (id) => {
     const db = getFirestoreDb();
     const doc = await db.collection(COLLECTION_NAME).doc(id).get();
     if (!doc.exists) return null;
-    return mapCommuneDoc(doc);
+    return mapContactDoc(doc);
 };
 
-const updateCommune = async (id, payload) => {
+const updateContact = async (id, payload) => {
     const db = getFirestoreDb();
     const admin = getFirebaseAdmin();
     const docRef = db.collection(COLLECTION_NAME).doc(id);
     const snapshot = await docRef.get();
     if (!snapshot.exists) return null;
 
-    const data = buildCommunePayload(payload, false);
+    const data = buildContactPayload(payload, false);
 
     await docRef.set(
         {
@@ -96,10 +82,10 @@ const updateCommune = async (id, payload) => {
     );
 
     const updated = await docRef.get();
-    return mapCommuneDoc(updated);
+    return mapContactDoc(updated);
 };
 
-const deleteCommune = async (id) => {
+const deleteContact = async (id) => {
     const db = getFirestoreDb();
     const docRef = db.collection(COLLECTION_NAME).doc(id);
     const snapshot = await docRef.get();
@@ -109,10 +95,10 @@ const deleteCommune = async (id) => {
 };
 
 module.exports = {
-    createCommune,
-    listCommunes,
-    getCommune,
-    updateCommune,
-    deleteCommune,
+    createContact,
+    listContacts,
+    getContact,
+    updateContact,
+    deleteContact,
 };
 

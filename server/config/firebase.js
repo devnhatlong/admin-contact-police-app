@@ -1,32 +1,29 @@
 const admin = require("firebase-admin");
+const path = require("path");
 
-// Initialize Firebase Admin SDK using environment variables
+// Initialize Firebase Admin SDK
 const initializeFirebase = () => {
     if (admin.apps.length) {
         return admin.app();
     }
 
-    const {
-        FIREBASE_PROJECT_ID,
-        FIREBASE_CLIENT_EMAIL,
-        FIREBASE_PRIVATE_KEY,
-    } = process.env;
+    try {
+        // Đường dẫn tới file serviceAccountKey.json (nằm ở thư mục server, không phải config)
+        const serviceAccount = require(path.join(__dirname, "..", "serviceAccountKey.json"));
 
-    if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY) {
-        throw new Error("Firebase credentials are not fully configured.");
+        // Khởi tạo Firebase Admin
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+            databaseURL: process.env.FIREBASE_DB_URL,
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET
+        });
+
+        console.log("🔥 Firebase connected!");
+        return admin.app();
+    } catch (error) {
+        console.error("❌ Firebase connection error:", error);
+        throw error;
     }
-
-    const privateKey = FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n");
-
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: FIREBASE_PROJECT_ID,
-            clientEmail: FIREBASE_CLIENT_EMAIL,
-            privateKey,
-        }),
-    });
-
-    return admin.app();
 };
 
 const getFirestoreDb = () => {
@@ -36,8 +33,12 @@ const getFirestoreDb = () => {
 
 const getFirebaseAdmin = () => initializeFirebase();
 
-module.exports = {
-    getFirestoreDb,
-    getFirebaseAdmin,
+const firebaseConnect = () => {
+    initializeFirebase();
 };
 
+module.exports = {
+    firebaseConnect,
+    getFirestoreDb,
+    getFirebaseAdmin
+};
