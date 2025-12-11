@@ -143,21 +143,7 @@ const importContactsFromExcel = async (rows = []) => {
         }
 
         try {
-            // Check duplicate by ma_xa
-            const dupQuery = await db
-                .collection(COLLECTION_NAME)
-                .where("ma_xa", "==", payload.ma_xa)
-                .limit(1)
-                .get();
-
-            if (!dupQuery.empty) {
-                errors.push({
-                    row: index + 2,
-                    message: `Trùng mã xã: ${payload.ma_xa}`,
-                });
-                continue;
-            }
-
+            // Cho phép ma_xa trùng nhau, không check duplicate
             const data = buildContactPayload(payload);
             await db.collection(COLLECTION_NAME).add(data);
             successCount++;
