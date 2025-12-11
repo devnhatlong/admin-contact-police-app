@@ -18,6 +18,7 @@ router.put("/change-password", verifyAccessToken, ctrls.changePasswordByUser);
 // Admin CRUD routes
 router.post("/", [verifyAccessToken, isAdmin], ctrls.createUser);
 router.get("/", [verifyAccessToken, isAdmin], ctrls.getUsers);
+router.get("/get-user", [verifyAccessToken], ctrls.getUser);
 router.get("/:id", [verifyAccessToken, isAdmin], ctrls.getUserById);
 router.put("/:id", [verifyAccessToken, isAdmin], ctrls.updateUserByAdmin);
 router.delete("/:id", [verifyAccessToken, isAdmin], ctrls.deleteUser);

@@ -106,7 +106,7 @@ const createUser = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async(req, res) => { 
     const { userName, password } = req.body;
-    
+
     if (!userName || !password) {
         return res.status(400).json({
             success: false,
@@ -150,7 +150,7 @@ const getUsers = asyncHandler(async (req, res) => {
 
 const getUser = asyncHandler(async(req, res) => { 
     const { _id } = req.user;
-    
+
     const response = await UserService.getUser(_id);
     return res.status(200).json({
         success: response ? true : false,
@@ -160,7 +160,7 @@ const getUser = asyncHandler(async(req, res) => {
 
 const getUserById = asyncHandler(async (req, res) => {
     const { id } = req.params;
-
+    
     const response = await UserService.getUserById(id);
 
     res.status(response ? 200 : 404).json({
@@ -192,7 +192,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         
     return res.status(200).json({
         success: response ? true : false,
-        newAccessToken: response ? generateAccessToken(response.id, "user") : "Refresh token not matched"
+        newAccessToken: response ? generateAccessToken(response.id, response.role || "user") : "Refresh token not matched"
     });
 });
 

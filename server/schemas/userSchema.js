@@ -22,6 +22,13 @@ const USER_SCHEMA = {
         required: true,
         description: "Mật khẩu đã được hash bằng bcrypt"
     },
+    role: {
+        type: "string",
+        required: false,
+        default: "user",
+        enum: ["user", "admin"],
+        description: "Vai trò của người dùng (user hoặc admin)"
+    },
     
     // Optional fields
     refreshToken: {
@@ -78,6 +85,13 @@ const validateUser = (data, isUpdate = false) => {
         errors.push("refreshToken must be a string");
     }
 
+    if (data.role !== undefined) {
+        const validRoles = ["user", "admin"];
+        if (typeof data.role !== "string" || !validRoles.includes(data.role)) {
+            errors.push("role must be either 'user' or 'admin'");
+        }
+    }
+
     return {
         isValid: errors.length === 0,
         errors
@@ -91,6 +105,7 @@ const sanitizeUserData = (data) => {
     const allowedFields = [
         "userName",
         "password",
+        "role",
         "refreshToken"
     ];
 
@@ -108,7 +123,9 @@ const sanitizeUserData = (data) => {
  * Get default user data
  */
 const getDefaultUserData = () => {
-    return {};
+    return {
+        role: "user"
+    };
 };
 
 module.exports = {

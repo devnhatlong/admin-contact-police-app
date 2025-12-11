@@ -39,6 +39,9 @@ const buildUserPayload = (data, includeTimestamps = true) => {
     // Password (đã được hash trước khi gọi hàm này)
     if (data.password !== undefined) user.password = data.password;
     
+    // Role (mặc định là "user" nếu không có)
+    user.role = data.role || "user";
+    
     // RefreshToken
     if (data.refreshToken !== undefined) user.refreshToken = data.refreshToken;
 
@@ -61,7 +64,7 @@ const createUser = async (data) => {
 
     // Sanitize data
     const sanitizedData = sanitizeUserData(data);
-    const { userName, password } = sanitizedData;
+    const { userName, password, role } = sanitizedData;
 
     const db = getFirestoreDb();
 
@@ -84,6 +87,7 @@ const createUser = async (data) => {
         {
             userName,
             password: hashedPassword,
+            role: role || "user", // lưu role nếu được truyền, mặc định "user"
         },
         true
     );
@@ -121,8 +125,8 @@ const login = async (user) => {
         throw new Error("Invalid credentials!");
     }
 
-    // Tạo tokens (không có role nữa, dùng "user" mặc định)
-    const accessToken = generateAccessToken(userData.id, "user");
+    // Tạo tokens với role từ userData
+    const accessToken = generateAccessToken(userData.id, userData.role || "user");
     const newRefreshToken = generateRefreshToken(userData.id);
 
     // Cập nhật refreshToken
