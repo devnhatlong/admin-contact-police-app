@@ -106,8 +106,6 @@ const createUser = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async(req, res) => { 
     const { userName, password } = req.body;
-    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    req.body.ip = clientIp;
     
     if (!userName || !password) {
         return res.status(400).json({
@@ -184,7 +182,11 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 
     // verify token
-    const result = await jwt.verify(refreshTokenFromBody, process.env.JWT_SECRET);
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+        throw new Error("JWT_SECRET is not defined in environment variables");
+    }
+    const result = await jwt.verify(refreshTokenFromBody, jwtSecret);
 
     const response = await UserService.getUserByRefreshToken(result._id, refreshTokenFromBody);
         

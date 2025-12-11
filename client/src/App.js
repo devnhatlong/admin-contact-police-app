@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import "./styles/sb-admin-2.min.css";
 import { Login } from './pages/Login/views/Login';
 import PrivateRoute from './routes/PrivateRoute';
 import { Dashboard } from './pages/Dashboard/views/Dashboard';
-import { IOC } from './pages/IOC/views/IOC';
 import userService from './services/userService';
 import { useDispatch } from 'react-redux';
 import { setUser } from './redux/userSlice';
@@ -14,26 +13,36 @@ import Loading from './components/LoadingComponent/Loading';
 function App() {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true); // Mặc định là `true` để chờ tải dữ liệu
+  const hasFetchedUserRef = useRef(false); // Dùng ref để tránh re-render
 
-  // Sử dụng useCallback để ghi nhớ hàm handleGetDetailsUser
-  const handleGetDetailsUser = useCallback(async () => {
-    const { accessToken, decoded } = handleDecoded();
-
-    if (decoded?._id) {
-      try {
-        const response = await userService.getUser(accessToken);
-        dispatch(setUser(response.result));
-      } catch (error) {
-        console.error("Error fetching user details:", error);
-      }
-    }
-    setIsLoading(false); // Kết thúc trạng thái tải sau khi hoàn thành
-  }, [dispatch]); // Đưa dispatch vào mảng phụ thuộc
-
-  // Gọi handleGetDetailsUser khi component được mount
+  // Gọi getUser chỉ một lần khi component mount
   useEffect(() => {
-    handleGetDetailsUser();
-  }, [handleGetDetailsUser]); // Đưa handleGetDetailsUser vào mảng phụ thuộc
+    const fetchUser = async () => {
+      // Chỉ gọi API nếu chưa gọi trước đó
+      if (hasFetchedUserRef.current) {
+        setIsLoading(false);
+        return;
+      }
+
+      const { accessToken, decoded } = handleDecoded();
+
+      if (decoded?._id) {
+        try {
+          const response = await userService.getUser(accessToken);
+          if (response?.result) {
+            dispatch(setUser(response.result));
+          }
+          hasFetchedUserRef.current = true; // Đánh dấu đã gọi API
+        } catch (error) {
+          console.error("Error fetching user details:", error);
+        }
+      }
+      setIsLoading(false); // Kết thúc trạng thái tải sau khi hoàn thành
+    };
+
+    fetchUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Chỉ chạy một lần khi mount
 
   // Hiển thị trạng thái tải trước khi render các route
   if (isLoading) {
@@ -48,7 +57,6 @@ function App() {
             <Route path="/*" element={<Dashboard />} />
           </Route>
           <Route path="/login" element={<Login />} />
-          <Route path="/ioc" element={<IOC />} />
         </Routes>
       </div>
     </Router>

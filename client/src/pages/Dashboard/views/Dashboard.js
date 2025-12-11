@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { UserOutlined, IdcardOutlined, CarOutlined, FireOutlined, SnippetsOutlined, SettingOutlined, ContainerOutlined } from '@ant-design/icons';
+import { UserOutlined, SnippetsOutlined } from '@ant-design/icons';
 import { Menu, Layout } from 'antd';
 import { useSelector } from 'react-redux';
 
@@ -12,24 +12,11 @@ import { AdminDepartment } from "../../Admin/AdminDepartment/views/AdminDepartme
 import { FieldOfWork } from "../../Category/FieldOfWork/views/FieldOfWork";
 import { Crime } from "../../Category/Crime/views/Crime";
 import { PATHS } from '../../../constants/path';
-import { PermissionFunction } from "../../Setting/PermissionFunction/views/PermissionFunction";
-import { PermissionField } from "../../Setting/PermissionField/views/PermissionField";
-import { ReportSend } from "../../REPORT/ReportSend/views/ReportSend";
-import { ReportSummary } from "../../REPORT/ReportSummary/views/ReportSummary";
 import { Topic } from "../../Category/Topic/views/Topic";
 import { ReportType } from "../../Category/ReportType/views/ReportType";
 import { AdminProvince } from "../../Admin/AdminProvince/views/AdminProvince";
-// import { AdminDistrict } from "../../Admin/AdminDistrict/views/AdminDistrict";
 import { AdminCommune } from "../../Admin/AdminCommune/views/AdminCommune";
 import { ROLE } from "../../../constants/role";
-import { GeneralSetting } from "../../GeneralSettings/views/GeneralSetting";
-import { SocialOrderNew } from "../../SocialOrder/views/SocialOrderNew";
-import { SocialOrderList } from "../../SocialOrder/views/SocialOrderList";
-import { SocialOrderDetail } from "../../SocialOrder/views/SocialOrderDetail";
-import { DailyReport } from "../../REPORT/DailyReport/views/DailyReport";
-import DailyReportList from "../../REPORT/DailyReport/views/DailyReportList";
-import DailyReportDetail from "../../REPORT/DailyReport/views/DailyReportDetail";
-import DailyReportEdit from "../../REPORT/DailyReport/views/DailyReportEdit";
 
 const { Sider, Content } = Layout;
 
@@ -95,18 +82,6 @@ export const Dashboard = () => {
         //         getItem('Thống kê vụ cháy/nổ', PATHS.FIRE_EXPLOSIONS.STATS, null, null, menuChildrenItemStyle),
         //     ]
         // },
-        {
-            key: 'report',
-            label: 'Báo cáo - tổng hợp',
-            icon: <ContainerOutlined />,
-            style: menuItemStyle,
-            children: [
-                getItem('Báo cáo ngày', PATHS.REPORT.DAILY_NEW, null, null, menuChildrenItemStyle),
-                getItem('Danh sách báo cáo ngày', PATHS.REPORT.DAILY_LIST, null, null, menuChildrenItemStyle),
-                // getItem('Gửi báo cáo', PATHS.REPORT.SEND, null, null, menuChildrenItemStyle),
-                // user?.role === ROLE.ADMIN && getItem('Tổng hợp báo cáo', PATHS.REPORT.SUMMARY, null, null, menuChildrenItemStyle),
-            ]
-        },
         user?.role === ROLE.ADMIN && {
             key: 'category',
             label: 'Quản lý danh mục',
@@ -117,17 +92,6 @@ export const Dashboard = () => {
                 getItem('Tội danh', PATHS.CATEGORY.CRIME, null, null, menuChildrenItemStyle),
                 getItem('Chuyên đề', PATHS.CATEGORY.TOPIC, null, null, menuChildrenItemStyle),
                 getItem('Loại báo cáo', PATHS.CATEGORY.REPORT_TYPE, null, null, menuChildrenItemStyle),
-            ]
-        },
-        user?.role === ROLE.ADMIN && {
-            key: 'setting',
-            label: 'Cấu hình',
-            icon: <SettingOutlined />,
-            style: menuItemStyle,
-            children: [
-                // getItem('Phân quyền chức năng', PATHS.SETTING.PERMISSION_FUNCTION, null, null, menuChildrenItemStyle),
-                getItem('Phân quyền lĩnh vực vụ việc', PATHS.SETTING.PERMISSION_FIELD, null, null, menuChildrenItemStyle),
-                getItem('Cài đặt chung', PATHS.SETTING.GENERAL, null, null, menuChildrenItemStyle),
             ]
         },
         user?.role === ROLE.ADMIN && {
@@ -166,31 +130,13 @@ export const Dashboard = () => {
     // Sync openKeys with URL
     useEffect(() => {
         const pathToKeyMap = {
-            [PATHS.SOCIAL_ORDER.NEW]: 'social_order',
-            [PATHS.SOCIAL_ORDER.LIST]: 'social_order',
-            [PATHS.SOCIAL_ORDER.LOOKUP]: 'social_order',
-            [PATHS.SOCIAL_ORDER.STATS]: 'social_order',
-            [PATHS.TRAFFIC.INCIDENTS]: 'traffic',
-            [PATHS.TRAFFIC.STATS]: 'traffic',
-            [PATHS.FIRE_EXPLOSIONS.LIST]: 'fire-explosions',
-            [PATHS.FIRE_EXPLOSIONS.STATS]: 'fire-explosions',
-            [PATHS.REPORT.DAILY_NEW]: 'report',
-            [PATHS.REPORT.DAILY_LIST]: 'report',
-            [PATHS.REPORT.SEND]: 'report',
-            [PATHS.REPORT.SUMMARY]: 'report',
             [PATHS.CATEGORY.FIELD_OF_WORK]: 'category',
             [PATHS.CATEGORY.CRIME]: 'category',
             [PATHS.CATEGORY.TOPIC]: 'category',
             [PATHS.CATEGORY.REPORT_TYPE]: 'category',
-            [PATHS.SETTING.PERMISSION_FUNCTION]: 'setting',
-            [PATHS.SETTING.PERMISSION_FIELD]: 'setting',
-            [PATHS.SETTING.GENERAL]: 'setting',
-
-
             [PATHS.ADMIN.USER]: 'admin',
             [PATHS.ADMIN.DEPARTMENT]: 'admin',
             [PATHS.ADMIN.PROVINCE]: 'admin',
-            // [PATHS.ADMIN.DISTRICT]: 'admin',
             [PATHS.ADMIN.COMMUNE]: 'admin',
         };
 
@@ -265,34 +211,19 @@ export const Dashboard = () => {
                     }}
                 >
                     <Routes>
-                        <Route path={PATHS.SOCIAL_ORDER.NEW} element={<SocialOrderNew />} />
-                        <Route path={PATHS.SOCIAL_ORDER.LIST} element={<SocialOrderList />} />
-                        <Route path={PATHS.SOCIAL_ORDER.DETAIL} element={<SocialOrderDetail />} />
-                        <Route path={PATHS.SOCIAL_ORDER.EDIT} element={<SocialOrderNew />} />
-                        
-                        <Route path={PATHS.REPORT.DAILY_NEW} element={<DailyReport />} />
-                        <Route path={PATHS.REPORT.DAILY_LIST} element={<DailyReportList />} />
-                        <Route path={PATHS.REPORT.DAILY_DETAIL} element={<DailyReportDetail />} />
-                        <Route path={PATHS.REPORT.DAILY_EDIT} element={<DailyReportEdit />} />
-                        <Route path={PATHS.REPORT.SEND} element={<ReportSend />} />
-                        <Route path={PATHS.REPORT.SUMMARY} element={<ReportSummary />} />
                         <Route path={PATHS.CATEGORY.FIELD_OF_WORK} element={<FieldOfWork />} />
                         <Route path={PATHS.CATEGORY.CRIME} element={<Crime />} />
                         <Route path={PATHS.CATEGORY.TOPIC} element={<Topic />} />
                         <Route path={PATHS.CATEGORY.REPORT_TYPE} element={<ReportType />} />
-                        {/* <Route path={PATHS.SETTING.PERMISSION_FUNCTION} element={<PermissionFunction />} /> */}
-                        <Route path={PATHS.SETTING.PERMISSION_FIELD} element={<PermissionField />} />
-                        <Route path={PATHS.SETTING.GENERAL} element={<GeneralSetting />} />
                         <Route path={PATHS.ADMIN.USER} element={<AdminUser />} />
                         <Route path={PATHS.ADMIN.DEPARTMENT} element={<AdminDepartment />} />
                         <Route path={PATHS.ADMIN.PROVINCE} element={<AdminProvince />} />
-                        {/* <Route path={PATHS.ADMIN.DISTRICT} element={<AdminDistrict />} /> */}
                         <Route path={PATHS.ADMIN.COMMUNE} element={<AdminCommune />} />
                         <Route
                             path="*"
                             element={(
                                 <div style={{ padding: '24px', background: '#fff', minHeight: '280px' }}>
-                                    <h1>Số Liệu Cơ Bản</h1>
+                                    <h1>Quản trị danh bạ CALD</h1>
                                     <p>Sản phẩm của Đội Công nghệ thông tin - Phòng Tham mưu - Bình Thuận.</p>
                                     <p>Vui lòng chọn một tùy chọn từ menu để bắt đầu.</p>
                                 </div>

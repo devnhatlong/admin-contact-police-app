@@ -91,14 +91,14 @@ export const NavbarLoginComponent = () => {
     );
 
     const handleLogout = async () => {
-        let refreshToken = getTokenFromCookie("refreshToken_SLCB");
+        let refreshToken = getTokenFromCookie("refreshToken_DBLD");
 
         if (refreshToken) {
             await userService.logout(refreshToken);
 
             // Clear tokens from cookie
-            document.cookie = "accessToken_SLCB=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            document.cookie = "refreshToken_SLCB=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = "accessToken_DBLD=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = "refreshToken_DBLD=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             // clear redux
             dispatch(clearUser());
         }
@@ -120,7 +120,7 @@ export const NavbarLoginComponent = () => {
                         onClick={() => navigate('/dashboard')}
                     >
                         <img src={Logo} alt="" style={{ height: "30px" }} />
-                        <h3 style={{ margin: 0, color: "#012970", fontWeight: 500 }}>Số Liệu Cơ Bản</h3>
+                        <h3 style={{ margin: 0, color: "#012970", fontWeight: 500 }}>Quản trị danh bạ CALD</h3>
                     </div>
                     {/* Topbar Navbar */}
                     <ul className="navbar-nav ml-auto">

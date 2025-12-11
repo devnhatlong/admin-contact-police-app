@@ -9,7 +9,7 @@ const initializeFirebase = () => {
 
     try {
         // Đường dẫn tới file serviceAccountKey.json (nằm ở thư mục server, không phải config)
-        const serviceAccount = require(path.join(__dirname, "..", "serviceAccountKey.json"));
+        const serviceAccount = require(path.join(__dirname, "..", "serviceAccountKey.local.json"));
 
         // Khởi tạo Firebase Admin
         admin.initializeApp({

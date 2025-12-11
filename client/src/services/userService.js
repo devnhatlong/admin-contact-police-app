@@ -6,7 +6,7 @@ export const axiosJWT = axios.create();
 // Add a request interceptor to add the JWT token to the authorization header
 axiosJWT.interceptors.request.use(
     (config) => {
-        const accessToken = getTokenFromCookie("accessToken_SLCB");
+        const accessToken = getTokenFromCookie("accessToken_DBLD");
 
         if (accessToken) {
             config.headers.Authorization = `Bearer ${accessToken}`;
@@ -22,12 +22,12 @@ axiosJWT.interceptors.response.use(
     async (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        const refreshToken = getTokenFromCookie("refreshToken_SLCB");
+        const refreshToken = getTokenFromCookie("refreshToken_DBLD");
 
         if (error.response.status === 401 && refreshToken) {
             try {
                 const { newAccessToken } = await userService.getRefreshToken(refreshToken);
-                document.cookie = `accessToken_SLCB=${newAccessToken}; path=/`;
+                document.cookie = `accessToken_DBLD=${newAccessToken}; path=/`;
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
                 return axiosJWT(originalRequest);
@@ -53,8 +53,8 @@ axiosJWT.interceptors.response.use(
 
 const redirectToLogin = () => {
     // Clear tokens from cookie
-    document.cookie = "accessToken_SLCB=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "refreshToken_SLCB=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "accessToken_DBLD=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "refreshToken_DBLD=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     // Redirect to login page
     window.location.href = "/login";
 };
