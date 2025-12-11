@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { FormListHeader, WrapperHeader } from '../styles/style';
-import { Button, Form, Input, Select, Space } from "antd";
+import { Button, Form, Input, Space } from "antd";
 import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons'
 
 import { useNavigate } from 'react-router';
@@ -14,13 +14,11 @@ import Loading from '../../../../components/LoadingComponent/Loading';
 import * as message from '../../../../components/Message/Message';
 import DrawerComponent from '../../../../components/DrawerComponent/DrawerComponent';
 import communeService from '../../../../services/communeService';
-import provinceService from '../../../../services/provinceService';
 import { useMutationHooks } from '../../../../hooks/useMutationHook';
 import ImportExcel from "../../../../components/ImportExcel/ImportExcel";
 import BreadcrumbComponent from '../../../../components/BreadcrumbComponent/BreadcrumbComponent';
 import { ROLE } from '../../../../constants/role';
 import { PATHS } from '../../../../constants/path';
-import { LIMIT_RECORD } from '../../../../constants/limit';
 
 export const AdminCommune = () => {
     const [modalForm] = Form.useForm();
@@ -37,7 +35,6 @@ export const AdminCommune = () => {
     const [dataTable, setDataTable] = useState([]);
     const [filters, setFilters] = useState({});
     const [resetSelection, setResetSelection] = useState(false);
-    const [provinces, setProvinces] = useState([]);
     const [pagination, setPagination] = useState({
         currentPage: 1,
         pageSize: 10 // Số lượng mục trên mỗi trang
@@ -57,46 +54,46 @@ export const AdminCommune = () => {
         { label: 'Quản lý xã, phường, thị trấn' },
     ];
 
-    useEffect(() => {
-        const fetchProvinces = async () => {
-            try {
-                const response = await provinceService.getProvinces(1, LIMIT_RECORD.ALL); // Lấy tối đa 100 bản ghi
-                if (response?.data) {
-                    setProvinces(response.data);
-                }
-            } catch (error) {
-                console.error("Lỗi khi lấy danh sách Tỉnh/Thành phố:", error);
-            }
-        };
-    
-        fetchProvinces();
-    }, []);
-
     const [stateCommune, setStateCommune] = useState({
-        communeName: "",
-        communeCode: "",
-        provinceId: "",
+        ma_xa: "",
+        ten_xa: "",
+        name: "",
+        loai: "",
+        cap: "",
+        ma_tinh: "",
+        ten_tinh: "",
+        dan_so: "",
+        dtich_km2: "",
+        matdo_km2: "",
+        address: "",
+        tru_so: "",
+        sap_nhap: "",
     });
 
     const [stateCommuneDetail, setStateCommuneDetail] = useState({
-        communeName: "",
-        communeCode: "",
-        provinceId: "",
+        ma_xa: "",
+        ten_xa: "",
+        name: "",
+        loai: "",
+        cap: "",
+        ma_tinh: "",
+        ten_tinh: "",
+        dan_so: "",
+        dtich_km2: "",
+        matdo_km2: "",
+        address: "",
+        tru_so: "",
+        sap_nhap: "",
     });
 
     const mutation = useMutationHooks(
-        (data) => {
-            const { communeName, communeCode, provinceId } = data;
-            const response = communeService.createCommune({ communeName, communeCode, provinceId });
-            return response;
-        }
+        (data) => communeService.createCommune(data)
     )
 
     const mutationUpdate = useMutationHooks(
         (data) => { 
             const { id, ...rests } = data;
-            const response = communeService.updateCommune(id, { ...rests });
-            return response;
+            return communeService.updateCommune(id, { ...rests });
         }
     );
     
@@ -143,9 +140,19 @@ export const AdminCommune = () => {
 
         if (response?.data) {
             setStateCommuneDetail({
-                communeName: response?.data?.communeName,
-                communeCode: response?.data?.communeCode,
-                provinceId: response?.data?.provinceId,
+                ma_xa: response?.data?.ma_xa || "",
+                ten_xa: response?.data?.ten_xa || "",
+                name: response?.data?.name || "",
+                loai: response?.data?.loai || "",
+                cap: response?.data?.cap || "",
+                ma_tinh: response?.data?.ma_tinh || "",
+                ten_tinh: response?.data?.ten_tinh || "",
+                dan_so: response?.data?.dan_so || "",
+                dtich_km2: response?.data?.dtich_km2 || "",
+                matdo_km2: response?.data?.matdo_km2 || "",
+                address: response?.data?.address || "",
+                tru_so: response?.data?.tru_so || "",
+                sap_nhap: response?.data?.sap_nhap || "",
             })
         }
         setIsLoadingUpdate(false);
@@ -179,23 +186,26 @@ export const AdminCommune = () => {
         setIsOpenDrawer(true);
     }
 
-    useEffect(() => {
-        query.refetch();
-        setIsLoadingResetFilter(false);
-    }, [isLoadingResetFilter]);
-
-    const handleResetAllFilter = () => {
-        setIsLoadingResetFilter(true);
-        setColumnFilters("");
-        setFilters("");
-    }
-
     const query = useQuery({
-        queryKey: ['allRecords'],
+        queryKey: ['communes', pagination.currentPage, pagination.pageSize, filters],
         queryFn: () => getAllRecords(pagination.currentPage, pagination.pageSize, filters),
         retry: 3,
         retryDelay: 1000,
     });
+
+    useEffect(() => {
+        if (isLoadingResetFilter) {
+            query.refetch().finally(() => setIsLoadingResetFilter(false));
+        }
+    }, [isLoadingResetFilter, query]);
+
+    const handleResetAllFilter = () => {
+        setColumnFilters({});
+        setFilters({});
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        setResetSelection((prev) => !prev);
+        setIsLoadingResetFilter(true);
+    }
 
     const { isLoading: isLoadingAllRecords, data: allRecords } = query;
 
@@ -301,22 +311,20 @@ export const AdminCommune = () => {
     }
 
     useEffect(() => {
-        if (allRecords?.data) {
+        if (allRecords?.data || allRecords?.items) {
             const updatedDataTable = fetchDataForDataTable(allRecords);
             setDataTable(updatedDataTable);
         }
     }, [allRecords]);
 
     const fetchDataForDataTable = (allRecords) => {
-        return allRecords?.data?.map((record) => {
-            return {
-                ...record, 
-                key: record._id,
-                provinceName: record?.provinceId?.provinceName,
-                createdAt: new Date(record.createdAt),
-                updatedAt: new Date(record.updatedAt),
-            };
-        });
+        const records = allRecords?.data || allRecords?.items || [];
+        return records.map((record) => ({
+            ...record,
+            key: record._id || record.id,
+            createdAt: record.createdAt ? new Date(record.createdAt._seconds ? record.createdAt._seconds * 1000 : record.createdAt) : null,
+            updatedAt: record.updatedAt ? new Date(record.updatedAt._seconds ? record.updatedAt._seconds * 1000 : record.updatedAt) : null,
+        }));
     };
 
     const handleOnChange = (name, value) => {
@@ -418,28 +426,21 @@ export const AdminCommune = () => {
     }
 
     const columns = [
-        {
-            title: 'Tên xã, phường, thị trấn',
-            dataIndex: 'communeName',
-            key: 'communeName',
-            filteredValue: null, // Loại bỏ filter mặc định
-            onFilter: null, // Loại bỏ filter mặc định
-            ...getColumnSearchProps('communeName', 'tên xã, phường, thị trấn')
-        },
-        {
-            title: 'Mã định danh',
-            dataIndex: 'communeCode',
-            key: 'communeCode',
-            filteredValue: null, // Loại bỏ filter mặc định
-            onFilter: null, // Loại bỏ filter mặc định
-        },
-        {
-            title: 'Tỉnh/Thành phố',
-            dataIndex: 'provinceName',
-            key: 'provinceName',
-            filteredValue: null, // Loại bỏ filter mặc định
-            onFilter: null, // Loại bỏ filter mặc định
-        },
+        { title: 'Mã xã', dataIndex: 'ma_xa', key: 'ma_xa', ...getColumnSearchProps('ma_xa', 'mã xã') },
+        { title: 'Tên xã', dataIndex: 'ten_xa', key: 'ten_xa', ...getColumnSearchProps('ten_xa', 'tên xã') },
+        { title: 'Tên đầy đủ', dataIndex: 'name', key: 'name', ...getColumnSearchProps('name', 'tên đầy đủ') },
+        { title: 'Loại', dataIndex: 'loai', key: 'loai', ...getColumnSearchProps('loai', 'loại') },
+        { title: 'Cấp', dataIndex: 'cap', key: 'cap' },
+        { title: 'Mã tỉnh', dataIndex: 'ma_tinh', key: 'ma_tinh' },
+        { title: 'Tên tỉnh', dataIndex: 'ten_tinh', key: 'ten_tinh' },
+        { title: 'Dân số', dataIndex: 'dan_so', key: 'dan_so' },
+        { title: 'Diện tích (km2)', dataIndex: 'dtich_km2', key: 'dtich_km2' },
+        { title: 'Mật độ (người/km2)', dataIndex: 'matdo_km2', key: 'matdo_km2' },
+        { title: 'Địa chỉ', dataIndex: 'address', key: 'address' },
+        { title: 'Trụ sở', dataIndex: 'tru_so', key: 'tru_so' },
+        { title: 'Sáp nhập', dataIndex: 'sap_nhap', key: 'sap_nhap' },
+        { title: 'Ngày tạo', dataIndex: 'createdAt', key: 'createdAt', render: (v) => v ? v.toLocaleString() : '' },
+        { title: 'Ngày cập nhật', dataIndex: 'updatedAt', key: 'updatedAt', render: (v) => v ? v.toLocaleString() : '' },
         {
           title: buttonReloadTable,
           dataIndex: 'action',
@@ -447,64 +448,23 @@ export const AdminCommune = () => {
         },
     ];
 
-    const handleSearch = async (selectedKeys, confirm, dataIndex) => {
-        setFilters(prevFilters => {
-            const updatedFilters = {
-                ...prevFilters,
-                [dataIndex]: selectedKeys[dataIndex]
-            };
-            return updatedFilters;
-        });
-
-        // Tiếp tục với cuộc gọi hàm getAllRecords và truyền filters vào đó.
-        getAllRecords(pagination.currentPage, pagination.pageSize, filters)
-        .then(response => {
-            // Xử lý response...
-            query.refetch();
-        })
-        .catch(error => {
-            message.error(error);
-        });
+    const handleSearch = (selectedKeys, confirm, dataIndex) => {
+        setFilters((prev) => ({ ...prev, [dataIndex]: selectedKeys[dataIndex] }));
         confirm();
-    }; 
+    };
     
     const handleReset = (clearFilters, confirm, dataIndex) => {
         clearFilters();
-        
-        if (dataIndex === "ngayDen") {
-            setColumnFilters(prevColumnFilters => {
-                const updatedColumnFilters = { ...prevColumnFilters };
-                return updatedColumnFilters;
-            });
-
-            setFilters(prevFilters => {
-                const updatedFilters = { ...prevFilters };
-                return updatedFilters;
-            });
-        }
-        else {
-            setColumnFilters(prevColumnFilters => {
-                const updatedColumnFilters = { ...prevColumnFilters };
-                delete updatedColumnFilters[dataIndex];
-                return updatedColumnFilters;
-            });
-            setFilters(prevFilters => {
-                const updatedFilters = { ...prevFilters };
-                delete updatedFilters[dataIndex];
-                return updatedFilters;
-            });
-        }
-
-        // Tiếp tục với cuộc gọi hàm getAllRecords và truyền filters vào đó để xóa filter cụ thể trên server.
-        getAllRecords(pagination.currentPage, pagination.pageSize, filters)
-            .then(response => {
-                // Xử lý response nếu cần
-                query.refetch();
-            })
-            .catch(error => {
-                // Xử lý lỗi nếu có
-                message.error(error);
-            });
+        setColumnFilters((prev) => {
+            const updated = { ...prev };
+            delete updated[dataIndex];
+            return updated;
+        });
+        setFilters((prev) => {
+            const updated = { ...prev };
+            delete updated[dataIndex];
+            return updated;
+        });
         confirm();
     };
 
@@ -591,60 +551,44 @@ export const AdminCommune = () => {
                         onFinish={onFinish}
                         autoComplete="on"
                     >
-                        <Form.Item
-                            label="Tên xã, phường, thị trấn"
-                            name="communeName"
-                            labelCol={{ span: 24 }}
-                            wrapperCol={{ span: 24 }}
-                            style={{ marginBottom: 10 }}
-                            rules={[{ required: true, message: 'Vui lòng nhập tên xã, phường, thị trấn!' }]}
-                        >
-                            <InputComponent 
-                                name="communeName" 
-                                value={stateCommune.communeName} 
-                                placeholder="Nhập tên xã, phường, thị trấn" 
-                                onChange={(e) => handleOnChange('communeName', e.target.value)} 
-                            />
+                        <Form.Item label="Mã xã" name="ma_xa" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập mã xã' }]}>
+                            <InputComponent name="ma_xa" value={stateCommune.ma_xa} onChange={(e) => handleOnChange('ma_xa', e.target.value)} />
                         </Form.Item>
-
-                        <Form.Item
-                            label="Mã định danh"
-                            name="communeCode"
-                            labelCol={{ span: 24 }}
-                            wrapperCol={{ span: 24 }}
-                            style={{ marginBottom: 10 }}
-                        >
-                            <InputComponent
-                                name="communeCode" 
-                                value={stateCommune.communeCode} 
-                                onChange={(e) => handleOnChange('communeCode', e.target.value)} 
-                                placeholder="Nhập mã định danh..." 
-                            />
+                        <Form.Item label="Tên xã" name="ten_xa" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập tên xã' }]}>
+                            <InputComponent name="ten_xa" value={stateCommune.ten_xa} onChange={(e) => handleOnChange('ten_xa', e.target.value)} />
                         </Form.Item>
-
-                        <Form.Item
-                            label="Tỉnh/Thành phố"
-                            name="provinceId"
-                            labelCol={{ span: 24 }}
-                            wrapperCol={{ span: 24 }}
-                            style={{ marginBottom: 10 }}
-                            rules={[{ required: true, message: 'Vui lòng chọn tỉnh/thành phố!' }]}
-                        >
-                            <Select
-                                showSearch // Bật tính năng tìm kiếm
-                                placeholder="Chọn tỉnh/thành phố"
-                                value={stateCommune.provinceId}
-                                onChange={(value) => handleOnChange('provinceId', value)}
-                                filterOption={(input, option) =>
-                                    option?.children?.toLowerCase().includes(input.toLowerCase())
-                                } // Tìm kiếm theo tên tỉnh/thành phố
-                            >
-                                {provinces.map((province) => (
-                                    <Select.Option key={province._id} value={province._id}>
-                                        {province.provinceName}
-                                    </Select.Option>
-                                ))}
-                            </Select>
+                        <Form.Item label="Tên đầy đủ" name="name" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập tên đầy đủ' }]}>
+                            <InputComponent name="name" value={stateCommune.name} onChange={(e) => handleOnChange('name', e.target.value)} />
+                        </Form.Item>
+                        <Form.Item label="Loại" name="loai" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập loại (Xã/Phường/Thị trấn)' }]}>
+                            <InputComponent name="loai" value={stateCommune.loai} onChange={(e) => handleOnChange('loai', e.target.value)} placeholder="Xã / Phường / Thị trấn" />
+                        </Form.Item>
+                        <Form.Item label="Cấp" name="cap" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="cap" value={stateCommune.cap} onChange={(e) => handleOnChange('cap', e.target.value)} type="number" />
+                        </Form.Item>
+                        <Form.Item label="Mã tỉnh" name="ma_tinh" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập mã tỉnh' }]}>
+                            <InputComponent name="ma_tinh" value={stateCommune.ma_tinh} onChange={(e) => handleOnChange('ma_tinh', e.target.value)} />
+                        </Form.Item>
+                        <Form.Item label="Tên tỉnh" name="ten_tinh" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập tên tỉnh' }]}>
+                            <InputComponent name="ten_tinh" value={stateCommune.ten_tinh} onChange={(e) => handleOnChange('ten_tinh', e.target.value)} />
+                        </Form.Item>
+                        <Form.Item label="Dân số" name="dan_so" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="dan_so" value={stateCommune.dan_so} onChange={(e) => handleOnChange('dan_so', e.target.value)} type="number" />
+                        </Form.Item>
+                        <Form.Item label="Diện tích (km2)" name="dtich_km2" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="dtich_km2" value={stateCommune.dtich_km2} onChange={(e) => handleOnChange('dtich_km2', e.target.value)} type="number" />
+                        </Form.Item>
+                        <Form.Item label="Mật độ (người/km2)" name="matdo_km2" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="matdo_km2" value={stateCommune.matdo_km2} onChange={(e) => handleOnChange('matdo_km2', e.target.value)} type="number" />
+                        </Form.Item>
+                        <Form.Item label="Địa chỉ" name="address" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="address" value={stateCommune.address} onChange={(e) => handleOnChange('address', e.target.value)} />
+                        </Form.Item>
+                        <Form.Item label="Trụ sở" name="tru_so" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="tru_so" value={stateCommune.tru_so} onChange={(e) => handleOnChange('tru_so', e.target.value)} />
+                        </Form.Item>
+                        <Form.Item label="Sáp nhập" name="sap_nhap" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="sap_nhap" value={stateCommune.sap_nhap} onChange={(e) => handleOnChange('sap_nhap', e.target.value)} />
                         </Form.Item>
 
                         <Form.Item wrapperCol={{ span: 24 }} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
@@ -665,60 +609,44 @@ export const AdminCommune = () => {
                         onFinish={onUpdate}
                         autoComplete="on"
                     >
-                        <Form.Item
-                            label="Tên xã, phường, thị trấn"
-                            name="communeName"
-                            labelCol={{ span: 24 }}
-                            wrapperCol={{ span: 24 }}
-                            style={{ marginBottom: 10 }}
-                            rules={[{ required: true, message: 'Vui lòng nhập tên xã, phường, thị trấn!' }]}
-                        >
-                            <InputComponent 
-                                name="communeName" 
-                                value={stateCommuneDetail.communeName} 
-                                placeholder="Nhập tên xã, phường, thị trấn" 
-                                onChange={(e) => handleOnChangeDetail('communeName', e.target.value)} 
-                            />
+                        <Form.Item label="Mã xã" name="ma_xa" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập mã xã' }]}>
+                            <InputComponent name="ma_xa" value={stateCommuneDetail.ma_xa} onChange={(e) => handleOnChangeDetail('ma_xa', e.target.value)} />
                         </Form.Item>
-
-                        <Form.Item
-                            label="Mã định danh"
-                            name="communeCode"
-                            labelCol={{ span: 24 }}
-                            wrapperCol={{ span: 24 }}
-                            style={{ marginBottom: 10 }}
-                        >
-                            <InputComponent
-                                name="communeCode" 
-                                value={stateCommuneDetail.communeCode} 
-                                onChange={(e) => handleOnChangeDetail('communeCode', e.target.value)} 
-                                placeholder="Nhập mã định danh..." 
-                            />
+                        <Form.Item label="Tên xã" name="ten_xa" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập tên xã' }]}>
+                            <InputComponent name="ten_xa" value={stateCommuneDetail.ten_xa} onChange={(e) => handleOnChangeDetail('ten_xa', e.target.value)} />
                         </Form.Item>
-
-                        <Form.Item
-                            label="Tỉnh/Thành phố"
-                            name="provinceId"
-                            labelCol={{ span: 24 }}
-                            wrapperCol={{ span: 24 }}
-                            style={{ marginBottom: 10 }}
-                            rules={[{ required: true, message: 'Vui lòng chọn tỉnh/thành phố!' }]}
-                        >
-                            <Select
-                                showSearch // Bật tính năng tìm kiếm
-                                placeholder="Chọn tỉnh/thành phố"
-                                value={stateCommuneDetail.provinceId}
-                                onChange={(value) => handleOnChangeDetail('provinceId', value)}
-                                filterOption={(input, option) =>
-                                    option?.children?.toLowerCase().includes(input.toLowerCase())
-                                } // Tìm kiếm theo tên tỉnh/thành phố
-                            >
-                                {provinces.map((province) => (
-                                    <Select.Option key={province._id} value={province._id}>
-                                        {province.provinceName}
-                                    </Select.Option>
-                                ))}
-                            </Select>
+                        <Form.Item label="Tên đầy đủ" name="name" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập tên đầy đủ' }]}>
+                            <InputComponent name="name" value={stateCommuneDetail.name} onChange={(e) => handleOnChangeDetail('name', e.target.value)} />
+                        </Form.Item>
+                        <Form.Item label="Loại" name="loai" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập loại (Xã/Phường/Thị trấn)' }]}>
+                            <InputComponent name="loai" value={stateCommuneDetail.loai} onChange={(e) => handleOnChangeDetail('loai', e.target.value)} placeholder="Xã / Phường / Thị trấn" />
+                        </Form.Item>
+                        <Form.Item label="Cấp" name="cap" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="cap" value={stateCommuneDetail.cap} onChange={(e) => handleOnChangeDetail('cap', e.target.value)} type="number" />
+                        </Form.Item>
+                        <Form.Item label="Mã tỉnh" name="ma_tinh" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập mã tỉnh' }]}>
+                            <InputComponent name="ma_tinh" value={stateCommuneDetail.ma_tinh} onChange={(e) => handleOnChangeDetail('ma_tinh', e.target.value)} />
+                        </Form.Item>
+                        <Form.Item label="Tên tỉnh" name="ten_tinh" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: 'Nhập tên tỉnh' }]}>
+                            <InputComponent name="ten_tinh" value={stateCommuneDetail.ten_tinh} onChange={(e) => handleOnChangeDetail('ten_tinh', e.target.value)} />
+                        </Form.Item>
+                        <Form.Item label="Dân số" name="dan_so" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="dan_so" value={stateCommuneDetail.dan_so} onChange={(e) => handleOnChangeDetail('dan_so', e.target.value)} type="number" />
+                        </Form.Item>
+                        <Form.Item label="Diện tích (km2)" name="dtich_km2" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="dtich_km2" value={stateCommuneDetail.dtich_km2} onChange={(e) => handleOnChangeDetail('dtich_km2', e.target.value)} type="number" />
+                        </Form.Item>
+                        <Form.Item label="Mật độ (người/km2)" name="matdo_km2" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="matdo_km2" value={stateCommuneDetail.matdo_km2} onChange={(e) => handleOnChangeDetail('matdo_km2', e.target.value)} type="number" />
+                        </Form.Item>
+                        <Form.Item label="Địa chỉ" name="address" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="address" value={stateCommuneDetail.address} onChange={(e) => handleOnChangeDetail('address', e.target.value)} />
+                        </Form.Item>
+                        <Form.Item label="Trụ sở" name="tru_so" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="tru_so" value={stateCommuneDetail.tru_so} onChange={(e) => handleOnChangeDetail('tru_so', e.target.value)} />
+                        </Form.Item>
+                        <Form.Item label="Sáp nhập" name="sap_nhap" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
+                            <InputComponent name="sap_nhap" value={stateCommuneDetail.sap_nhap} onChange={(e) => handleOnChangeDetail('sap_nhap', e.target.value)} />
                         </Form.Item>
 
                         <Form.Item wrapperCol={{ span: 24 }} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>

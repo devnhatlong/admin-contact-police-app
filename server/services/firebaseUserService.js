@@ -13,6 +13,7 @@ const mapUserDoc = (doc) => {
     if (!doc || !doc.exists) return null;
     return {
         id: doc.id,
+        _id: doc.id, // alias cho client dùng _id
         ...doc.data(),
     };
 };

@@ -8,14 +8,9 @@ import '../styles/style.css';
 import { NavbarLoginComponent } from "../../../components/NavbarLoginComponent/NavbarLoginComponent";
 import { getItem } from "../../../utils/utils";
 import { AdminUser } from "../../Admin/AdminUser/views/AdminUser";
-import { AdminDepartment } from "../../Admin/AdminDepartment/views/AdminDepartment";
-import { FieldOfWork } from "../../Category/FieldOfWork/views/FieldOfWork";
-import { Crime } from "../../Category/Crime/views/Crime";
 import { PATHS } from '../../../constants/path';
-import { Topic } from "../../Category/Topic/views/Topic";
-import { ReportType } from "../../Category/ReportType/views/ReportType";
-import { AdminProvince } from "../../Admin/AdminProvince/views/AdminProvince";
 import { AdminCommune } from "../../Admin/AdminCommune/views/AdminCommune";
+import { AdminContact } from "../../Admin/AdminContact/views/AdminContact";
 import { ROLE } from "../../../constants/role";
 
 const { Sider, Content } = Layout;
@@ -50,50 +45,6 @@ export const Dashboard = () => {
 
     // Menu items
     const items = [
-        // {
-        //     key: 'social_order',
-        //     label: 'Vụ việc về TTXH',
-        //     icon: <IdcardOutlined />,
-        //     style: menuItemStyle,
-        //     children: [
-        //         getItem('Thêm vụ việc TTXH', PATHS.SOCIAL_ORDER.NEW, null, null, menuChildrenItemStyle),
-        //         getItem('Danh sách vụ việc TTXH', PATHS.SOCIAL_ORDER.LIST, null, null, menuChildrenItemStyle),
-        //         getItem('Tra cứu đối tượng', PATHS.SOCIAL_ORDER.LOOKUP, null, null, menuChildrenItemStyle),
-        //         getItem('Thống kê số liệu', PATHS.SOCIAL_ORDER.STATS, null, null, menuChildrenItemStyle),
-        //     ]
-        // },
-        // {
-        //     key: 'traffic',
-        //     label: 'Giao thông',
-        //     icon: <CarOutlined />,
-        //     style: menuItemStyle,
-        //     children: [
-        //         getItem('Danh sách TNGT', PATHS.TRAFFIC.INCIDENTS, null, null, menuChildrenItemStyle),
-        //         getItem('Thống kê vụ TNGT', PATHS.TRAFFIC.STATS, null, null, menuChildrenItemStyle),
-        //     ]
-        // },
-        // {
-        //     key: 'fire-explosions',
-        //     label: 'Phòng cháy chữa cháy',
-        //     icon: <FireOutlined />,
-        //     style: menuItemStyle,
-        //     children: [
-        //         getItem('Danh sách vụ cháy/nổ', PATHS.FIRE_EXPLOSIONS.LIST, null, null, menuChildrenItemStyle),
-        //         getItem('Thống kê vụ cháy/nổ', PATHS.FIRE_EXPLOSIONS.STATS, null, null, menuChildrenItemStyle),
-        //     ]
-        // },
-        user?.role === ROLE.ADMIN && {
-            key: 'category',
-            label: 'Quản lý danh mục',
-            icon: <SnippetsOutlined />,
-            style: menuItemStyle,
-            children: [
-                getItem('Lĩnh vực vụ việc', PATHS.CATEGORY.FIELD_OF_WORK, null, null, menuChildrenItemStyle),
-                getItem('Tội danh', PATHS.CATEGORY.CRIME, null, null, menuChildrenItemStyle),
-                getItem('Chuyên đề', PATHS.CATEGORY.TOPIC, null, null, menuChildrenItemStyle),
-                getItem('Loại báo cáo', PATHS.CATEGORY.REPORT_TYPE, null, null, menuChildrenItemStyle),
-            ]
-        },
         user?.role === ROLE.ADMIN && {
             key: 'admin',
             label: 'Quản trị',
@@ -101,10 +52,8 @@ export const Dashboard = () => {
             style: menuItemStyle,
             children: [
                 getItem('Tài khoản người dùng', PATHS.ADMIN.USER, null, null, menuChildrenItemStyle),
-                getItem('Đơn vị / Phòng ban', PATHS.ADMIN.DEPARTMENT, null, null, menuChildrenItemStyle),
-                getItem('Tỉnh / thành phố', PATHS.ADMIN.PROVINCE, null, null, menuChildrenItemStyle),
-                // getItem('Quận / huyện', PATHS.ADMIN.DISTRICT, null, null, menuChildrenItemStyle),
-                getItem('Xã, phường, thị trấn', PATHS.ADMIN.COMMUNE, null, null, menuChildrenItemStyle),
+                getItem('Xã / Phường', PATHS.ADMIN.COMMUNE, null, null, menuChildrenItemStyle),
+                getItem('Liên hệ', PATHS.ADMIN.CONTACT, null, null, menuChildrenItemStyle),
             ]
         },
     ].filter(Boolean); // Remove null items
@@ -130,14 +79,9 @@ export const Dashboard = () => {
     // Sync openKeys with URL
     useEffect(() => {
         const pathToKeyMap = {
-            [PATHS.CATEGORY.FIELD_OF_WORK]: 'category',
-            [PATHS.CATEGORY.CRIME]: 'category',
-            [PATHS.CATEGORY.TOPIC]: 'category',
-            [PATHS.CATEGORY.REPORT_TYPE]: 'category',
             [PATHS.ADMIN.USER]: 'admin',
-            [PATHS.ADMIN.DEPARTMENT]: 'admin',
-            [PATHS.ADMIN.PROVINCE]: 'admin',
             [PATHS.ADMIN.COMMUNE]: 'admin',
+            [PATHS.ADMIN.CONTACT]: 'admin',
         };
 
         const currentPath = location.pathname;
@@ -211,14 +155,9 @@ export const Dashboard = () => {
                     }}
                 >
                     <Routes>
-                        <Route path={PATHS.CATEGORY.FIELD_OF_WORK} element={<FieldOfWork />} />
-                        <Route path={PATHS.CATEGORY.CRIME} element={<Crime />} />
-                        <Route path={PATHS.CATEGORY.TOPIC} element={<Topic />} />
-                        <Route path={PATHS.CATEGORY.REPORT_TYPE} element={<ReportType />} />
                         <Route path={PATHS.ADMIN.USER} element={<AdminUser />} />
-                        <Route path={PATHS.ADMIN.DEPARTMENT} element={<AdminDepartment />} />
-                        <Route path={PATHS.ADMIN.PROVINCE} element={<AdminProvince />} />
                         <Route path={PATHS.ADMIN.COMMUNE} element={<AdminCommune />} />
+                        <Route path={PATHS.ADMIN.CONTACT} element={<AdminContact />} />
                         <Route
                             path="*"
                             element={(

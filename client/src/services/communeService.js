@@ -2,7 +2,7 @@ import { createAxiosInstance } from '../utils/axiosUtils';
 
 export const axiosCommune = createAxiosInstance();
 
-const BASE_URL = `${process.env.REACT_APP_SERVER_URL}/commune`;
+const BASE_URL = `${process.env.REACT_APP_SERVER_URL}/communes`;
 
 const communeService = {
     // Tạo xã, phường, thị trấn mới
@@ -17,10 +17,10 @@ const communeService = {
     },
 
     // Lấy danh sách xã, phường, thị trấn với phân trang và lọc
-    getCommunes: async (page, limit, fields, sort ) => {
+    getCommunes: async (page, pageSize, fields, sort ) => {
         try {
             const response = await axiosCommune.get(`${BASE_URL}/`, {
-                params: { page, limit, fields, sort }
+                params: { page, pageSize, fields, sort }
             });
             return response.data;
         } catch (error) {

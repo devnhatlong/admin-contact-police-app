@@ -1,14 +1,15 @@
-const { getFirestoreDb, getFirebaseAdmin } = require("../config/firebase");
+const { getFirestoreDb } = require("../config/firebase");
+const admin = require("firebase-admin");
 
 const COLLECTION_NAME = process.env.FIREBASE_CONTACTS_COLLECTION || "contacts";
 
 const mapContactDoc = (doc) => ({
     id: doc.id,
+    _id: doc.id, // alias for client compatibility
     ...doc.data(),
 });
 
 const buildContactPayload = (data, includeTimestamps = true) => {
-    const admin = getFirebaseAdmin();
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
 
     const contact = {
@@ -35,24 +36,43 @@ const createContact = async (payload) => {
     return mapContactDoc(created);
 };
 
-const listContacts = async ({ page = 1, pageSize = 20 }) => {
+const listContacts = async ({ page = 1, pageSize = 20, fields = {}, sort }) => {
     const db = getFirestoreDb();
     const limit = Number(pageSize) > 0 ? Number(pageSize) : 20;
-    const offset = (Number(page) > 0 ? Number(page) - 1 : 0) * limit;
+    const pageNumber = Number(page) > 0 ? Number(page) : 1;
+    const offset = (pageNumber - 1) * limit;
 
-    const querySnapshot = await db
-        .collection(COLLECTION_NAME)
-        .orderBy("ma_xa")
-        .offset(offset)
-        .limit(limit)
-        .get();
+    // Lấy toàn bộ rồi filter in-memory (đáp ứng contains cho mọi field)
+    let query = db.collection(COLLECTION_NAME);
+    if (sort) {
+        const first = sort.split(",")[0];
+        const field = first.startsWith("-") ? first.slice(1) : first;
+        const direction = first.startsWith("-") ? "desc" : "asc";
+        query = query.orderBy(field, direction);
+    } else {
+        query = query.orderBy("ma_xa");
+    }
 
-    const totalSnapshot = await db.collection(COLLECTION_NAME).count().get();
+    const snapshot = await query.get();
+    const allItems = snapshot.docs.map(mapContactDoc);
+
+    const filtered = allItems.filter((item) => {
+        if (!fields || typeof fields !== "object") return true;
+        return Object.entries(fields).every(([k, v]) => {
+            if (v === undefined || v === null || v === "") return true;
+            const val = item[k];
+            if (val === undefined || val === null) return false;
+            return val.toString().toLowerCase().includes(v.toString().toLowerCase());
+        });
+    });
+
+    const total = filtered.length;
+    const paged = filtered.slice(offset, offset + limit);
 
     return {
-        items: querySnapshot.docs.map(mapContactDoc),
-        total: totalSnapshot.data().count,
-        page: Number(page) || 1,
+        items: paged,
+        total,
+        page: pageNumber,
         pageSize: limit,
     };
 };
@@ -66,7 +86,6 @@ const getContact = async (id) => {
 
 const updateContact = async (id, payload) => {
     const db = getFirestoreDb();
-    const admin = getFirebaseAdmin();
     const docRef = db.collection(COLLECTION_NAME).doc(id);
     const snapshot = await docRef.get();
     if (!snapshot.exists) return null;

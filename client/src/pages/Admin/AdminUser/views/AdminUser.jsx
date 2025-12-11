@@ -13,7 +13,6 @@ import TableComponent from '../../../../components/TableComponent/TableComponent
 import InputComponent from '../../../../components/InputComponent/InputComponent';
 import ModalComponent from '../../../../components/ModalComponent/ModalComponent';
 import userService from '../../../../services/userService';
-import departmentService from '../../../../services/departmentService';
 import Loading from '../../../../components/LoadingComponent/Loading';
 import * as message from '../../../../components/Message/Message';
 import { useMutationHooks } from '../../../../hooks/useMutationHook';
@@ -23,7 +22,6 @@ import ImportExcel from '../../../../components/ImportExcel/ImportExcel';
 import BreadcrumbComponent from '../../../../components/BreadcrumbComponent/BreadcrumbComponent';
 import { ROLE } from '../../../../constants/role';
 import { PATHS } from '../../../../constants/path';
-import { LIMIT_RECORD } from '../../../../constants/limit';
 
 export const AdminUser = () => {
     const [modalForm] = Form.useForm();
@@ -42,7 +40,6 @@ export const AdminUser = () => {
     const [dataTable, setDataTable] = useState([]);
     const [filters, setFilters] = useState({});
     const [resetSelection, setResetSelection] = useState(false);
-    const [departments, setDepartments] = useState([]);
     const [pagination, setPagination] = useState({
         currentPage: 1,
         pageSize: 10 // Số lượng mục trên mỗi trang
@@ -61,21 +58,6 @@ export const AdminUser = () => {
         { label: 'Quản lý tài khoản' },
     ];
 
-    useEffect(() => {
-        const fetchDepartments = async () => {
-            try {
-                const response = await departmentService.getDepartments(1, LIMIT_RECORD.ALL);
-                if (response?.data) {
-                    setDepartments(response.data);
-                }
-            } catch (error) {
-                console.error("Lỗi khi lấy danh sách đơn vị:", error);
-            }
-        };
-    
-        fetchDepartments();
-    }, []);
-
     const [passwordChangedByAdmin, setPasswordChangedByAdmin] = useState({
         password: "",
     });
@@ -83,14 +65,12 @@ export const AdminUser = () => {
     const [stateUser, setStateUser] = useState({
         userName: "",
         password: "",
-        departmentId: "",
         role: ""
     });
 
     const [stateUserDetail, setStateUserDetail] = useState({
         userName: "",
         password: "",
-        departmentId: "",
         role: ""
     });
 
@@ -155,7 +135,6 @@ export const AdminUser = () => {
         setStateUser({
             userName: "",
             password: "",
-            departmentId: "",
             role: ""
         });
 
@@ -180,7 +159,6 @@ export const AdminUser = () => {
 
             setStateUserDetail({
                 userName: response?.data?.userName,
-                departmentId: response?.data?.departmentId,
                 role: response?.data?.role
             })
         }
@@ -381,10 +359,8 @@ export const AdminUser = () => {
             return {
                 ...user, 
                 key: user._id,
-                departmentName: user?.departmentId?.departmentName,
-                passwordChangedAt: user.passwordChangedAt ? moment(parseInt(user.passwordChangedAt)).format('DD/MM/YYYY HH:MM') : "",
-                createdAt: <Moment format="DD/MM/YYYY HH:MM">{user.createdAt}</Moment>,
-                updatedAt: <Moment format="DD/MM/YYYY HH:MM">{user.createdAt}</Moment>,
+                createdAt: user.createdAt ? <Moment format="DD/MM/YYYY HH:mm">{user.createdAt.toDate ? user.createdAt.toDate() : user.createdAt}</Moment> : '',
+                updatedAt: user.updatedAt ? <Moment format="DD/MM/YYYY HH:mm">{user.updatedAt.toDate ? user.updatedAt.toDate() : user.updatedAt}</Moment> : '',
             };
         });
     };
@@ -505,14 +481,6 @@ export const AdminUser = () => {
             ...getColumnSearchProps('userName', 'tên đăng nhập')
         },
         {
-            title: 'Tên đơn vị',
-            dataIndex: 'departmentName',
-            key: 'departmentName',
-            filteredValue: null, // Loại bỏ filter mặc định
-            onFilter: null, // Loại bỏ filter mặc định
-            // ...getColumnSearchProps('departmentName', 'tên đơn vị')
-        },
-        {
             title: 'Vai trò',
             dataIndex: 'role',
             filteredValue: null, // Loại bỏ filter mặc định
@@ -520,31 +488,12 @@ export const AdminUser = () => {
             ...getColumnSearchProps('role', 'vai trò')
         },
         {
-            title: 'Lịch sử đăng nhập',
-            dataIndex: 'loginInfo',
-            key: 'loginInfo',
-            render: loginInfo => (
-                Array.isArray(loginInfo) && loginInfo.length > 0 ? (
-                  <ul>
-                    {loginInfo.slice(-3).map((info, index) => (
-                      <li key={index}>
-                        IP: {info.ip} <br />
-                        Browser: {info.browser} <br />
-                        Thời gian: <Moment format="DD/MM/YYYY HH:mm" tz="Asia/Ho_Chi_Minh">{info.timestamp}</Moment>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <span>Không có dữ liệu</span>
-                )
-            )
+            title: 'Ngày tạo',
+            dataIndex: 'createdAt',
         },
         {
-            title: 'Thời gian thay đổi mật khẩu',
-            dataIndex: 'passwordChangedAt',
-            filteredValue: null, // Loại bỏ filter mặc định
-            onFilter: null, // Loại bỏ filter mặc định
-            // ...getColumnSearchProps('role', 'vai trò')
+            title: 'Ngày cập nhật',
+            dataIndex: 'updatedAt',
         },
         {
           title: buttonReloadTable,
@@ -737,31 +686,6 @@ export const AdminUser = () => {
                         </Form.Item>
 
                         <Form.Item
-                            label="Đơn vị"
-                            name="departmentId"
-                            labelCol={{ span: 24 }}
-                            wrapperCol={{ span: 24 }}
-                            style={{ marginBottom: 10 }}
-                            rules={[{ required: true, message: 'Vui lòng chọn đơn vị!' }]}
-                        >
-                            <Select
-                                showSearch // Bật tính năng tìm kiếm
-                                placeholder="Chọn đơn vị"
-                                value={stateUser.departmentId}
-                                onChange={(value) => handleOnChange('departmentId', value)}
-                                filterOption={(input, option) =>
-                                    option?.children?.toLowerCase().includes(input.toLowerCase())
-                                } // Tìm kiếm theo tên lĩnh vực
-                            >
-                                {departments.map((field) => (
-                                    <Select.Option key={field._id} value={field._id}>
-                                        {field.departmentName}
-                                    </Select.Option>
-                                ))}
-                            </Select>
-                        </Form.Item>
-
-                        <Form.Item
                             label="Vai trò"
                             name="role"
                             labelCol={{ span: 24 }}
@@ -847,31 +771,6 @@ export const AdminUser = () => {
                                 placeholder="Nhập tên tài khoản"
                                 onChange={(e) => handleOnChangeDetail('userName', e.target.value)}
                             />
-                        </Form.Item>
-
-                        <Form.Item
-                            label="Đơn vị"
-                            name="departmentId"
-                            labelCol={{ span: 24 }}
-                            wrapperCol={{ span: 24 }}
-                            style={{ marginBottom: 10 }}
-                            rules={[{ required: true, message: 'Vui lòng chọn đơn vị!' }]}
-                        >
-                            <Select
-                                showSearch
-                                placeholder="Chọn đơn vị"
-                                value={stateUserDetail.departmentId}
-                                onChange={(value) => handleOnChangeDetail('departmentId', value)}
-                                filterOption={(input, option) =>
-                                    option?.children?.toLowerCase().includes(input.toLowerCase())
-                                }
-                            >
-                                {departments.map((field) => (
-                                    <Select.Option key={field._id} value={field._id}>
-                                        {field.departmentName}
-                                    </Select.Option>
-                                ))}
-                            </Select>
                         </Form.Item>
 
                         <Form.Item

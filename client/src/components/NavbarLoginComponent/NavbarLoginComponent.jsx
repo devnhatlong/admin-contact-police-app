@@ -124,26 +124,7 @@ export const NavbarLoginComponent = () => {
                     </div>
                     {/* Topbar Navbar */}
                     <ul className="navbar-nav ml-auto">
-                    {/* Button Bản đồ số */}
-                    <li className="nav-item" style={{ display: "flex", alignItems: "center", marginRight: "15px" }}>
-                        <Button 
-                            type="primary" 
-                            icon={<DashboardOutlined />}
-                            onClick={handleOpenIOC}
-                            style={{
-                                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                border: "none",
-                                borderRadius: "6px",
-                                fontWeight: "500",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-                            }}
-                        >
-                            Bản đồ số
-                        </Button>
-                    </li>
+
                     {/* Nav Item - Search Dropdown (Visible Only XS) */}
                     <li className="nav-item dropdown no-arrow d-sm-none">
                         <a

@@ -50,5 +50,6 @@ export const PATHS = {
         PROVINCE: '/admin/province',
         DISTRICT: '/admin/district',
         COMMUNE: '/admin/commune',
+        CONTACT: '/admin/contact',
     },
 };

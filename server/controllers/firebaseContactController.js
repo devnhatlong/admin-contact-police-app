@@ -25,8 +25,9 @@ const createContact = asyncHandler(async (req, res) => {
 });
 
 const listContacts = asyncHandler(async (req, res) => {
-    const { page = 1, pageSize = 20 } = req.query;
-    const result = await firebaseContactService.listContacts({ page, pageSize });
+    const { page = 1, pageSize, limit, fields, sort } = req.query;
+    const size = pageSize || limit || 20;
+    const result = await firebaseContactService.listContacts({ page, pageSize: size, fields, sort });
     res.status(200).json({
         success: true,
         ...result,
