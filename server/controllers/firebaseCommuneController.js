@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const xlsx = require("xlsx");
 const firebaseCommuneService = require("../services/firebaseCommuneService");
 
 const requiredFields = ["ma_xa", "ten_xa", "name", "loai", "cap", "ma_tinh", "ten_tinh"];
@@ -78,11 +79,31 @@ const deleteCommune = asyncHandler(async (req, res) => {
     });
 });
 
+const importFromExcel = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(sheet);
+
+    const result = await firebaseCommuneService.importCommunesFromExcel(data);
+
+    res.status(200).json({
+        success: true,
+        message: "Import xã/phường/thị trấn thành công",
+        ...result,
+    });
+});
+
 module.exports = {
     createCommune,
     listCommunes,
     getCommuneById,
     updateCommune,
     deleteCommune,
+    importFromExcel,
 };
 

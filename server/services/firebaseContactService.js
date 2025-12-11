@@ -113,11 +113,71 @@ const deleteContact = async (id) => {
     return true;
 };
 
+const importContactsFromExcel = async (rows = []) => {
+    const db = getFirestoreDb();
+    const errors = [];
+    let successCount = 0;
+
+    for (let index = 0; index < rows.length; index++) {
+        const raw = rows[index] || {};
+        // Chuẩn hóa key
+        const row = {};
+        Object.keys(raw).forEach((k) => {
+            if (typeof k === "string") row[k.trim()] = raw[k];
+        });
+
+        const payload = {
+            ma_xa: row.ma_xa,
+            ten_xa: row.ten_xa,
+            chief: row.chief,
+            mobile: row.mobile ?? null,
+        };
+
+        // Validate required fields
+        if (!payload.ma_xa || !payload.ten_xa || !payload.chief) {
+            errors.push({
+                row: index + 2, // +2 vì header + chỉ số 0
+                message: "Thiếu ma_xa, ten_xa hoặc chief",
+            });
+            continue;
+        }
+
+        try {
+            // Check duplicate by ma_xa
+            const dupQuery = await db
+                .collection(COLLECTION_NAME)
+                .where("ma_xa", "==", payload.ma_xa)
+                .limit(1)
+                .get();
+
+            if (!dupQuery.empty) {
+                errors.push({
+                    row: index + 2,
+                    message: `Trùng mã xã: ${payload.ma_xa}`,
+                });
+                continue;
+            }
+
+            const data = buildContactPayload(payload);
+            await db.collection(COLLECTION_NAME).add(data);
+            successCount++;
+        } catch (err) {
+            errors.push({
+                row: index + 2,
+                message: err.message || "Lỗi không xác định",
+            });
+        }
+    }
+
+    return { successCount, errorCount: errors.length, errors };
+};
+
 module.exports = {
     createContact,
     listContacts,
     getContact,
     updateContact,
     deleteContact,
+    importContactsFromExcel,
 };
 

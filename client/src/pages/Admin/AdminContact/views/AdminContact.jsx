@@ -17,6 +17,7 @@ import { ROLE } from "../../../../constants/role";
 import { PATHS } from "../../../../constants/path";
 import { useMutationHooks } from "../../../../hooks/useMutationHook";
 import contactService from "../../../../services/contactService";
+import ImportExcel from "../../../../components/ImportExcel/ImportExcel";
 
 export const AdminContact = () => {
     const [modalForm] = Form.useForm();
@@ -292,6 +293,10 @@ export const AdminContact = () => {
         query.refetch().finally(() => setIsLoadingResetFilter(false));
     };
 
+    const handleImportSuccess = () => {
+        query.refetch();
+    };
+
     const buttonReloadTable = () => (
         <div style={{ display: "flex", justifyContent: "center" }}>
             <ReloadOutlined style={{ color: "#1677ff", fontSize: "18px", cursor: "pointer" }} onClick={handleResetAllFilter} />
@@ -340,6 +345,7 @@ export const AdminContact = () => {
                         Thêm liên hệ
                     </Button>
                 </FormListHeader>
+                <ImportExcel service={contactService.importFromExcel} onSuccess={handleImportSuccess} />
             </div>
 
             <div style={{ marginTop: "20px" }}>

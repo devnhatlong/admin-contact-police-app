@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const xlsx = require("xlsx");
 const firebaseContactService = require("../services/firebaseContactService");
 
 const requiredFields = ["ma_xa", "ten_xa", "chief"];
@@ -80,11 +81,31 @@ const deleteContact = asyncHandler(async (req, res) => {
     });
 });
 
+const importFromExcel = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(sheet);
+
+    const result = await firebaseContactService.importContactsFromExcel(data);
+
+    res.status(200).json({
+        success: true,
+        message: "Import contact thành công",
+        ...result,
+    });
+});
+
 module.exports = {
     createContact,
     listContacts,
     getContactById,
     updateContact,
     deleteContact,
+    importFromExcel,
 };
 
