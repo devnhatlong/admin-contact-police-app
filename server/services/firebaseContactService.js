@@ -9,6 +9,14 @@ const mapContactDoc = (doc) => ({
     ...doc.data(),
 });
 
+const parseNumber = (value) => {
+    if (value === null || value === undefined || value === "") {
+        return null;
+    }
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+};
+
 const buildContactPayload = (data, includeTimestamps = true) => {
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
 
@@ -16,6 +24,7 @@ const buildContactPayload = (data, includeTimestamps = true) => {
         ma_xa: data.ma_xa,
         ten_xa: data.ten_xa,
         chief: data.chief,
+        cap: parseNumber(data.cap),
         mobile: data.mobile ?? null,
     };
 
@@ -130,14 +139,15 @@ const importContactsFromExcel = async (rows = []) => {
             ma_xa: row.ma_xa,
             ten_xa: row.ten_xa,
             chief: row.chief,
+            cap: parseNumber(row.cap),
             mobile: row.mobile ?? null,
         };
 
         // Validate required fields
-        if (!payload.ma_xa || !payload.ten_xa || !payload.chief) {
+        if (!payload.ma_xa || !payload.ten_xa || !payload.chief || payload.cap === null || payload.cap === undefined) {
             errors.push({
                 row: index + 2, // +2 vì header + chỉ số 0
-                message: "Thiếu ma_xa, ten_xa hoặc chief",
+                message: "Thiếu ma_xa, ten_xa, chief hoặc cap (cap phải là số hợp lệ)",
             });
             continue;
         }

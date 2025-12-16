@@ -54,6 +54,7 @@ export const AdminContact = () => {
         ma_xa: "",
         ten_xa: "",
         chief: "",
+        cap: "",
         mobile: "",
     });
 
@@ -61,6 +62,7 @@ export const AdminContact = () => {
         ma_xa: "",
         ten_xa: "",
         chief: "",
+        cap: "",
         mobile: "",
     });
 
@@ -87,6 +89,7 @@ export const AdminContact = () => {
                 ma_xa: response.data.ma_xa || "",
                 ten_xa: response.data.ten_xa || "",
                 chief: response.data.chief || "",
+                cap: response.data.cap || "",
                 mobile: response.data.mobile || "",
             });
         }
@@ -177,7 +180,7 @@ export const AdminContact = () => {
 
     const handleCancel = () => {
         setIsModalOpen(false);
-        setStateContact({ ma_xa: "", ten_xa: "", chief: "", mobile: "" });
+        setStateContact({ ma_xa: "", ten_xa: "", chief: "", cap: "", mobile: "" });
         modalForm.resetFields();
     };
 
@@ -314,6 +317,7 @@ export const AdminContact = () => {
         { title: "Mã xã", dataIndex: "ma_xa", key: "ma_xa", ...getColumnSearchProps("ma_xa", "mã xã") },
         { title: "Tên xã", dataIndex: "ten_xa", key: "ten_xa", ...getColumnSearchProps("ten_xa", "tên xã") },
         { title: "Trưởng phòng", dataIndex: "chief", key: "chief", ...getColumnSearchProps("chief", "trưởng phòng") },
+        { title: "Cấp", dataIndex: "cap", key: "cap", ...getColumnSearchProps("cap", "cấp") },
         { title: "Số điện thoại", dataIndex: "mobile", key: "mobile", ...getColumnSearchProps("mobile", "số điện thoại") },
         {
             title: "Ngày tạo",
@@ -389,6 +393,9 @@ export const AdminContact = () => {
                         <Form.Item label="Trưởng phòng" name="chief" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: "Nhập tên trưởng phòng" }]}>
                             <InputComponent name="chief" value={stateContact.chief} onChange={(e) => handleOnChange("chief", e.target.value)} />
                         </Form.Item>
+                        <Form.Item label="Cấp" name="cap" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: "Nhập cấp" }]}>
+                            <InputComponent name="cap" value={stateContact.cap} onChange={(e) => handleOnChange("cap", e.target.value)} type="number" />
+                        </Form.Item>
                         <Form.Item label="Số điện thoại" name="mobile" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
                             <InputComponent name="mobile" value={stateContact.mobile} onChange={(e) => handleOnChange("mobile", e.target.value)} />
                         </Form.Item>
@@ -422,6 +429,9 @@ export const AdminContact = () => {
                         </Form.Item>
                         <Form.Item label="Trưởng phòng" name="chief" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: "Nhập tên trưởng phòng" }]}>
                             <InputComponent name="chief" value={stateContactDetail.chief} onChange={(e) => handleOnChangeDetail("chief", e.target.value)} />
+                        </Form.Item>
+                        <Form.Item label="Cấp" name="cap" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }} rules={[{ required: true, message: "Nhập cấp" }]}>
+                            <InputComponent name="cap" value={stateContactDetail.cap} onChange={(e) => handleOnChangeDetail("cap", e.target.value)} type="number" />
                         </Form.Item>
                         <Form.Item label="Số điện thoại" name="mobile" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
                             <InputComponent name="mobile" value={stateContactDetail.mobile} onChange={(e) => handleOnChangeDetail("mobile", e.target.value)} />

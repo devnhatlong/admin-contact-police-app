@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler");
 const xlsx = require("xlsx");
 const firebaseContactService = require("../services/firebaseContactService");
 
-const requiredFields = ["ma_xa", "ten_xa", "chief"];
+const requiredFields = ["ma_xa", "ten_xa", "chief", "cap"];
 
 const validatePayload = (payload) => {
     const missing = requiredFields.filter(

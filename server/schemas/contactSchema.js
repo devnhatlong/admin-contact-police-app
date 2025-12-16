@@ -26,6 +26,11 @@ const CONTACT_SCHEMA = {
         required: true,
         description: "Tên người đứng đầu"
     },
+    cap: {
+        type: "number",
+        required: true,
+        description: "Cấp hành chính"
+    },
     
     // Optional fields
     mobile: {
@@ -67,6 +72,9 @@ const validateContact = (data, isUpdate = false) => {
         if (!data.chief || typeof data.chief !== "string" || data.chief.trim() === "") {
             errors.push("chief is required and must be a non-empty string");
         }
+        if (data.cap === undefined || data.cap === null || typeof data.cap !== "number") {
+            errors.push("cap is required and must be a number");
+        }
     }
 
     // Optional fields validation
@@ -94,6 +102,12 @@ const validateContact = (data, isUpdate = false) => {
         }
     }
 
+    if (data.cap !== undefined && data.cap !== null) {
+        if (typeof data.cap !== "number") {
+            errors.push("cap must be a number");
+        }
+    }
+
     return {
         isValid: errors.length === 0,
         errors
@@ -108,7 +122,8 @@ const sanitizeContactData = (data) => {
         "ma_xa",
         "ten_xa",
         "chief",
-        "mobile"
+        "mobile",
+        "cap"
     ];
 
     const sanitized = {};
