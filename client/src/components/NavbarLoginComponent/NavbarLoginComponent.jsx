@@ -13,7 +13,7 @@ import Loading from '../LoadingComponent/Loading';
 import { useMutationHooks } from '../../hooks/useMutationHook';
 import InputComponent from '../InputComponent/InputComponent';
 import * as message from '../../components/Message/Message';
-import Logo  from '../../assets/images/google-forms-icon.svg'
+import Logo  from '../../assets/images/logo.png'
 
 export const NavbarLoginComponent = () => {
     const user = useSelector((state) => state.user);
