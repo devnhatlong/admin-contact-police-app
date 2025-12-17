@@ -5,6 +5,7 @@ import userService from '../../../services/userService';
 import { setUser } from '../../../redux/userSlice';
 import * as message from '../../../components/Message/Message';
 import { RightOutlined, GlobalOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
+import Logo from '../../../assets/images/logo.png';
 import '../styles/style.css';
 
 export const Login = () => {
@@ -60,10 +61,7 @@ export const Login = () => {
                 <div className="login-header">
                     <div className="login-icon">
                         <div className="icon-box">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor"/>
-                                <path d="M2 17L12 22L22 17V12L12 17L2 12V17Z" fill="currentColor"/>
-                            </svg>
+                            <img src={Logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }} />
                         </div>
                     </div>
                     <h1 className="login-title">Hệ thống Quản lý Danh bạ CALD</h1>
