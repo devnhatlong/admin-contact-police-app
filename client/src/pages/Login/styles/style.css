@@ -1,3 +1,16 @@
+/* Wrapper full màn hình để form luôn căn giữa (tránh lệch do Spin của Ant Design) */
+.login-page-wrapper {
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Spin bọc ngoài .login-page-wrapper — cần full width để form căn giữa màn hình */
+.ant-spin-nested-loading:has(.login-page-wrapper),
+.ant-spin-nested-loading:has(.login-page-wrapper) .ant-spin-container {
+    width: 100%;
+    min-height: 100vh;
+}
+
 .login-container {
     display: flex;
     justify-content: center;
@@ -6,6 +19,7 @@
     width: 100%;
     background: #e0f2fe;
     padding: 20px;
+    box-sizing: border-box;
 }
 
 .login-card {

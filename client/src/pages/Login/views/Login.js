@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import userService from '../../../services/userService';
 import { setUser } from '../../../redux/userSlice';
 import * as message from '../../../components/Message/Message';
+import Loading from '../../../components/LoadingComponent/Loading';
 import { RightOutlined, GlobalOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 import Logo from '../../../assets/images/logo.png';
 import '../styles/style.css';
@@ -23,9 +24,11 @@ export const Login = () => {
 
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
         try {
             const response = await userService.login(values);
             
@@ -50,97 +53,102 @@ export const Login = () => {
         } catch (error) {
             console.error('Error:', error);
             message.error("Đăng nhập thất bại");
+        } finally {
+            setIsLoading(false);
         }
     };
 
-
     return (
-        <div className="login-container">
-            <div className="login-card">
-                {/* Header Section */}
-                <div className="login-header">
-                    <div className="login-icon">
-                        <div className="icon-box">
-                            <img src={Logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }} />
+        <Loading isLoading={isLoading}>
+            <div className="login-page-wrapper">
+            <div className="login-container">
+                <div className="login-card">
+                    {/* Header Section */}
+                    <div className="login-header">
+                        <div className="login-icon">
+                            <div className="icon-box">
+                                <img src={Logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }} />
+                            </div>
                         </div>
-                    </div>
-                    <h1 className="login-title">Hệ thống Quản lý Danh bạ CALD</h1>
-                    <p className="login-subtitle">Đăng nhập để tiếp tục</p>
-                </div>
-
-                {/* Login Form */}
-                <form className="login-form" onSubmit={handleSubmit}>
-                    {/* Username Field */}
-                    <div className="form-group">
-                        <label htmlFor="username" className="form-label">Tên người dùng</label>
-                        <input 
-                            type="text" 
-                            id="username" 
-                            name="username" 
-                            className="form-input" 
-                            placeholder="Nhập tên người dùng" 
-                            autoComplete="username"
-                            value={values.userName}
-                            onChange={(e) => setValues({...values, userName: e.target.value})}
-                        />
+                        <h1 className="login-title">Hệ thống Quản lý Danh bạ CALD</h1>
+                        <p className="login-subtitle">Đăng nhập để tiếp tục</p>
                     </div>
 
-                    {/* Password Field */}
-                    <div className="form-group">
-                        <label htmlFor="password" className="form-label">Mật khẩu</label>
-                        <div className="password-input-wrapper">
+                    {/* Login Form */}
+                    <form className="login-form" onSubmit={handleSubmit}>
+                        {/* Username Field */}
+                        <div className="form-group">
+                            <label htmlFor="username" className="form-label">Tên người dùng</label>
                             <input 
-                                type={showPassword ? "text" : "password"} 
-                                id="password" 
-                                name="password" 
+                                type="text" 
+                                id="username" 
+                                name="username" 
                                 className="form-input" 
-                                placeholder="Nhập mật khẩu" 
-                                autoComplete="current-password"
-                                value={values.password}
-                                onChange={(e) => setValues({...values, password: e.target.value})}
+                                placeholder="Nhập tên người dùng" 
+                                autoComplete="username"
+                                value={values.userName}
+                                onChange={(e) => setValues({...values, userName: e.target.value})}
                             />
-                            <span 
-                                className="password-toggle" 
-                                onClick={() => setShowPassword(!showPassword)}
-                            >
-                                {showPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-                            </span>
                         </div>
-                    </div>
 
-                    {/* Remember Me & Forgot Password */}
-                    <div className="form-options">
-                        <label className="remember-me">
-                            <input 
-                                type="checkbox" 
-                                checked={rememberMe}
-                                onChange={(e) => setRememberMe(e.target.checked)}
-                            />
-                            <span>Ghi nhớ tôi</span>
-                        </label>
-                        <a href="#" className="forgot-password">Quên mật khẩu?</a>
-                    </div>
+                        {/* Password Field */}
+                        <div className="form-group">
+                            <label htmlFor="password" className="form-label">Mật khẩu</label>
+                            <div className="password-input-wrapper">
+                                <input 
+                                    type={showPassword ? "text" : "password"} 
+                                    id="password" 
+                                    name="password" 
+                                    className="form-input" 
+                                    placeholder="Nhập mật khẩu" 
+                                    autoComplete="current-password"
+                                    value={values.password}
+                                    onChange={(e) => setValues({...values, password: e.target.value})}
+                                />
+                                <span 
+                                    className="password-toggle" 
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                                </span>
+                            </div>
+                        </div>
 
-                    {/* Login Button */}
-                    <button type="submit" className="btn-login">
-                        <span>Đăng nhập</span>
-                        <RightOutlined />
-                    </button>
+                        {/* Remember Me & Forgot Password */}
+                        <div className="form-options">
+                            <label className="remember-me">
+                                <input 
+                                    type="checkbox" 
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                />
+                                <span>Ghi nhớ tôi</span>
+                            </label>
+                            <a href="#" className="forgot-password">Quên mật khẩu?</a>
+                        </div>
 
-                    {/* Separator */}
-                    <div className="separator">
-                        <span>Hoặc tiếp tục với</span>
-                    </div>
+                        {/* Login Button */}
+                        <button type="submit" className="btn-login">
+                            <span>Đăng nhập</span>
+                            <RightOutlined />
+                        </button>
 
-                    {/* SSO Login Button */}
-                    <button type="button" className="btn-sso">
-                        <GlobalOutlined />
-                        <span>Đăng nhập qua SSO</span>
-                    </button>
+                        {/* Separator */}
+                        <div className="separator">
+                            <span>Hoặc tiếp tục với</span>
+                        </div>
 
-                    
+                        {/* SSO Login Button */}
+                        <button type="button" className="btn-sso">
+                            <GlobalOutlined />
+                            <span>Đăng nhập qua SSO</span>
+                        </button>
+
+                        
                 </form>
             </div>
         </div>
+            </div>
+        </Loading>
     )
 }
