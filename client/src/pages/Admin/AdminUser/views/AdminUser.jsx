@@ -55,7 +55,7 @@ export const AdminUser = () => {
     const breadcrumbItems = [
         { label: 'Trang chủ', path: `${PATHS.ROOT}` },
         { label: 'Quản trị' },
-        { label: 'Quản lý tài khoản' },
+        { label: 'Tài khoản quản trị web' },
     ];
 
     const [passwordChangedByAdmin, setPasswordChangedByAdmin] = useState({
@@ -595,7 +595,7 @@ export const AdminUser = () => {
 
     return (
         <div>
-            <WrapperHeader>Quản lý tài khoản</WrapperHeader>
+            <WrapperHeader>Tài khoản quản trị web</WrapperHeader>
             <BreadcrumbComponent items={breadcrumbItems} />
             <div style={{display: "flex", gap: "20px", marginTop: "40px" }}>
                 <FormListHeader>

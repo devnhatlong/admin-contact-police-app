@@ -9,6 +9,8 @@
  * 3. Documentation
  */
 
+const { VISIBILITY_VALUES, DEFAULT_VISIBILITY, normalizeVisibility } = require("../constants/visibility");
+
 const COMMUNE_SCHEMA = {
     // Required fields
     ma_xa: {
@@ -83,6 +85,13 @@ const COMMUNE_SCHEMA = {
         required: false,
         nullable: true,
         description: "Tình trạng sáp nhập"
+    },
+    visibility: {
+        type: "string",
+        required: false,
+        enum: ["public", "internal"],
+        default: "internal",
+        description: "public: hiển thị app chưa đăng nhập; internal: chỉ CBCS đã đăng nhập"
     },
     
     // Auto-generated fields (Firebase timestamps)
@@ -212,6 +221,12 @@ const validateCommune = (data, isUpdate = false) => {
         }
     }
 
+    if (data.visibility !== undefined && data.visibility !== null) {
+        if (!VISIBILITY_VALUES.includes(normalizeVisibility(data.visibility))) {
+            errors.push(`visibility must be one of: ${VISIBILITY_VALUES.join(", ")}`);
+        }
+    }
+
     return {
         isValid: errors.length === 0,
         errors
@@ -235,7 +250,8 @@ const sanitizeCommuneData = (data) => {
         "matdo_km2",
         "address",
         "tru_so",
-        "sap_nhap"
+        "sap_nhap",
+        "visibility"
     ];
 
     const sanitized = {};
@@ -244,6 +260,8 @@ const sanitizeCommuneData = (data) => {
             // Parse number fields
             if (["cap", "dan_so", "dtich_km2", "matdo_km2"].includes(field)) {
                 sanitized[field] = parseNumber(data[field]);
+            } else if (field === "visibility") {
+                sanitized[field] = normalizeVisibility(data[field]);
             } else {
                 sanitized[field] = data[field];
             }
@@ -263,7 +281,8 @@ const getDefaultCommuneData = () => {
         matdo_km2: null,
         address: null,
         tru_so: null,
-        sap_nhap: null
+        sap_nhap: null,
+        visibility: DEFAULT_VISIBILITY
     };
 };
 

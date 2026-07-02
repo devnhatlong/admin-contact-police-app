@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { FormListHeader, WrapperHeader } from '../styles/style';
-import { Button, Form, Input, Space } from "antd";
+import { Button, Form, Input, Space, Select, Tag } from "antd";
 import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons'
 
 import { useNavigate } from 'react-router';
@@ -19,6 +19,12 @@ import ImportExcel from "../../../../components/ImportExcel/ImportExcel";
 import BreadcrumbComponent from '../../../../components/BreadcrumbComponent/BreadcrumbComponent';
 import { ROLE } from '../../../../constants/role';
 import { PATHS } from '../../../../constants/path';
+import {
+    VISIBILITY_OPTIONS,
+    VISIBILITY_LABELS,
+    VISIBILITY_COLORS,
+    DEFAULT_VISIBILITY,
+} from '../../../../constants/visibility';
 
 export const AdminCommune = () => {
     const [modalForm] = Form.useForm();
@@ -68,6 +74,7 @@ export const AdminCommune = () => {
         address: "",
         tru_so: "",
         sap_nhap: "",
+        visibility: DEFAULT_VISIBILITY,
     });
 
     const [stateCommuneDetail, setStateCommuneDetail] = useState({
@@ -84,6 +91,7 @@ export const AdminCommune = () => {
         address: "",
         tru_so: "",
         sap_nhap: "",
+        visibility: DEFAULT_VISIBILITY,
     });
 
     const mutation = useMutationHooks(
@@ -153,6 +161,7 @@ export const AdminCommune = () => {
                 address: response?.data?.address || "",
                 tru_so: response?.data?.tru_so || "",
                 sap_nhap: response?.data?.sap_nhap || "",
+                visibility: response?.data?.visibility || DEFAULT_VISIBILITY,
             })
         }
         setIsLoadingUpdate(false);
@@ -429,6 +438,16 @@ export const AdminCommune = () => {
         { title: 'Mã xã', dataIndex: 'ma_xa', key: 'ma_xa', ...getColumnSearchProps('ma_xa', 'mã xã') },
         { title: 'Tên xã', dataIndex: 'ten_xa', key: 'ten_xa', ...getColumnSearchProps('ten_xa', 'tên xã') },
         { title: 'Tên đầy đủ', dataIndex: 'name', key: 'name', ...getColumnSearchProps('name', 'tên đầy đủ') },
+        {
+            title: 'Hiển thị',
+            dataIndex: 'visibility',
+            key: 'visibility',
+            render: (value) => (
+                <Tag color={VISIBILITY_COLORS[value] || 'default'}>
+                    {VISIBILITY_LABELS[value] || 'Nội bộ'}
+                </Tag>
+            ),
+        },
         { title: 'Loại', dataIndex: 'loai', key: 'loai', ...getColumnSearchProps('loai', 'loại') },
         { title: 'Cấp', dataIndex: 'cap', key: 'cap' },
         { title: 'Mã tỉnh', dataIndex: 'ma_tinh', key: 'ma_tinh' },
@@ -590,6 +609,20 @@ export const AdminCommune = () => {
                         <Form.Item label="Sáp nhập" name="sap_nhap" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
                             <InputComponent name="sap_nhap" value={stateCommune.sap_nhap} onChange={(e) => handleOnChange('sap_nhap', e.target.value)} />
                         </Form.Item>
+                        <Form.Item
+                            label="Hiển thị"
+                            name="visibility"
+                            labelCol={{ span: 24 }}
+                            wrapperCol={{ span: 24 }}
+                            style={{ marginBottom: 10 }}
+                            extra="Công khai: app chưa đăng nhập vẫn thấy. Nội bộ: chỉ CBCS đã đăng nhập."
+                        >
+                            <Select
+                                value={stateCommune.visibility}
+                                options={VISIBILITY_OPTIONS}
+                                onChange={(value) => handleOnChange('visibility', value)}
+                            />
+                        </Form.Item>
 
                         <Form.Item wrapperCol={{ span: 24 }} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                             <Button type="primary" htmlType="submit">Lưu</Button>
@@ -647,6 +680,20 @@ export const AdminCommune = () => {
                         </Form.Item>
                         <Form.Item label="Sáp nhập" name="sap_nhap" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
                             <InputComponent name="sap_nhap" value={stateCommuneDetail.sap_nhap} onChange={(e) => handleOnChangeDetail('sap_nhap', e.target.value)} />
+                        </Form.Item>
+                        <Form.Item
+                            label="Hiển thị"
+                            name="visibility"
+                            labelCol={{ span: 24 }}
+                            wrapperCol={{ span: 24 }}
+                            style={{ marginBottom: 10 }}
+                            extra="Công khai: app chưa đăng nhập vẫn thấy. Nội bộ: chỉ CBCS đã đăng nhập."
+                        >
+                            <Select
+                                value={stateCommuneDetail.visibility}
+                                options={VISIBILITY_OPTIONS}
+                                onChange={(value) => handleOnChangeDetail('visibility', value)}
+                            />
                         </Form.Item>
 
                         <Form.Item wrapperCol={{ span: 24 }} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>

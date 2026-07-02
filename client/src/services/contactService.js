@@ -16,6 +16,12 @@ const contactService = {
         });
         return response.data;
     },
+    getPublicContacts: async (page, pageSize, fields) => {
+        const response = await axiosContact.get(`${BASE_URL}/public`, {
+            params: { page, pageSize, fields },
+        });
+        return response.data;
+    },
     getContactById: async (id) => {
         const response = await axiosContact.get(`${BASE_URL}/${id}`);
         return response.data;

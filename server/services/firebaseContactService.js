@@ -1,4 +1,5 @@
 const { getFirestoreDb } = require("../config/firebase");
+const { matchesVisibilityScope, normalizeVisibility } = require("../constants/visibility");
 const admin = require("firebase-admin");
 
 const COLLECTION_NAME = process.env.FIREBASE_CONTACTS_COLLECTION || "contacts";
@@ -26,6 +27,7 @@ const buildContactPayload = (data, includeTimestamps = true) => {
         chief: data.chief,
         cap: parseNumber(data.cap),
         mobile: data.mobile ?? null,
+        visibility: normalizeVisibility(data.visibility),
     };
 
     if (!includeTimestamps) return contact;
@@ -45,7 +47,7 @@ const createContact = async (payload) => {
     return mapContactDoc(created);
 };
 
-const listContacts = async ({ page = 1, pageSize = 20, fields = {}, sort }) => {
+const listContacts = async ({ page = 1, pageSize = 20, fields = {}, sort, visibilityScope = "all" }) => {
     const db = getFirestoreDb();
     const limit = Number(pageSize) > 0 ? Number(pageSize) : 20;
     const pageNumber = Number(page) > 0 ? Number(page) : 1;
@@ -66,6 +68,7 @@ const listContacts = async ({ page = 1, pageSize = 20, fields = {}, sort }) => {
     const allItems = snapshot.docs.map(mapContactDoc);
 
     const filtered = allItems.filter((item) => {
+        if (!matchesVisibilityScope(item, visibilityScope)) return false;
         if (!fields || typeof fields !== "object") return true;
         return Object.entries(fields).every(([k, v]) => {
             if (v === undefined || v === null || v === "") return true;
@@ -141,6 +144,7 @@ const importContactsFromExcel = async (rows = []) => {
             chief: row.chief,
             cap: parseNumber(row.cap),
             mobile: row.mobile ?? null,
+            visibility: normalizeVisibility(row.visibility),
         };
 
         // Validate required fields

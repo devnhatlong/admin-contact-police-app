@@ -5,6 +5,7 @@ const { upload } = require("../middlewares/multerMiddleware");
 
 // Contact CRUD
 router.post("/", verifyAccessToken, contactCtrls.createContact);
+router.get("/public", contactCtrls.listPublicContacts);
 router.get("/", verifyAccessToken, contactCtrls.listContacts);
 router.get("/:id", verifyAccessToken, contactCtrls.getContactById);
 router.put("/:id", verifyAccessToken, contactCtrls.updateContact);

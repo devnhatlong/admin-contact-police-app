@@ -9,6 +9,8 @@
  * 3. Documentation
  */
 
+const { VISIBILITY_VALUES, DEFAULT_VISIBILITY, normalizeVisibility } = require("../constants/visibility");
+
 const CONTACT_SCHEMA = {
     // Required fields
     ma_xa: {
@@ -38,6 +40,13 @@ const CONTACT_SCHEMA = {
         required: false,
         nullable: true,
         description: "Số điện thoại (có thể null)"
+    },
+    visibility: {
+        type: "string",
+        required: false,
+        enum: ["public", "internal"],
+        default: "internal",
+        description: "public: hiển thị app chưa đăng nhập; internal: chỉ CBCS đã đăng nhập"
     },
     
     // Auto-generated fields (Firebase timestamps)
@@ -108,6 +117,12 @@ const validateContact = (data, isUpdate = false) => {
         }
     }
 
+    if (data.visibility !== undefined && data.visibility !== null) {
+        if (!VISIBILITY_VALUES.includes(normalizeVisibility(data.visibility))) {
+            errors.push(`visibility must be one of: ${VISIBILITY_VALUES.join(", ")}`);
+        }
+    }
+
     return {
         isValid: errors.length === 0,
         errors
@@ -123,13 +138,18 @@ const sanitizeContactData = (data) => {
         "ten_xa",
         "chief",
         "mobile",
-        "cap"
+        "cap",
+        "visibility"
     ];
 
     const sanitized = {};
     for (const field of allowedFields) {
         if (data[field] !== undefined) {
-            sanitized[field] = data[field];
+            if (field === "visibility") {
+                sanitized[field] = normalizeVisibility(data[field]);
+            } else {
+                sanitized[field] = data[field];
+            }
         }
     }
 
@@ -141,7 +161,8 @@ const sanitizeContactData = (data) => {
  */
 const getDefaultContactData = () => {
     return {
-        mobile: null
+        mobile: null,
+        visibility: DEFAULT_VISIBILITY
     };
 };
 

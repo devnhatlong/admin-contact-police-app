@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
-import { Button, Form, Space } from "antd";
+import { Button, Form, Space, Select, Tag } from "antd";
 import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
@@ -18,6 +18,12 @@ import { PATHS } from "../../../../constants/path";
 import { useMutationHooks } from "../../../../hooks/useMutationHook";
 import contactService from "../../../../services/contactService";
 import ImportExcel from "../../../../components/ImportExcel/ImportExcel";
+import {
+    VISIBILITY_OPTIONS,
+    VISIBILITY_LABELS,
+    VISIBILITY_COLORS,
+    DEFAULT_VISIBILITY,
+} from "../../../../constants/visibility";
 
 export const AdminContact = () => {
     const [modalForm] = Form.useForm();
@@ -56,6 +62,7 @@ export const AdminContact = () => {
         chief: "",
         cap: "",
         mobile: "",
+        visibility: DEFAULT_VISIBILITY,
     });
 
     const [stateContactDetail, setStateContactDetail] = useState({
@@ -64,6 +71,7 @@ export const AdminContact = () => {
         chief: "",
         cap: "",
         mobile: "",
+        visibility: DEFAULT_VISIBILITY,
     });
 
     const mutationCreate = useMutationHooks((data) => contactService.createContact(data));
@@ -91,6 +99,7 @@ export const AdminContact = () => {
                 chief: response.data.chief || "",
                 cap: response.data.cap || "",
                 mobile: response.data.mobile || "",
+                visibility: response.data.visibility || DEFAULT_VISIBILITY,
             });
         }
         setIsLoadingUpdate(false);
@@ -320,6 +329,16 @@ export const AdminContact = () => {
         { title: "Cấp", dataIndex: "cap", key: "cap", ...getColumnSearchProps("cap", "cấp") },
         { title: "Số điện thoại", dataIndex: "mobile", key: "mobile", ...getColumnSearchProps("mobile", "số điện thoại") },
         {
+            title: "Hiển thị",
+            dataIndex: "visibility",
+            key: "visibility",
+            render: (value) => (
+                <Tag color={VISIBILITY_COLORS[value] || "default"}>
+                    {VISIBILITY_LABELS[value] || "Nội bộ"}
+                </Tag>
+            ),
+        },
+        {
             title: "Ngày tạo",
             dataIndex: "createdAt",
             key: "createdAt",
@@ -399,6 +418,20 @@ export const AdminContact = () => {
                         <Form.Item label="Số điện thoại" name="mobile" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
                             <InputComponent name="mobile" value={stateContact.mobile} onChange={(e) => handleOnChange("mobile", e.target.value)} />
                         </Form.Item>
+                        <Form.Item
+                            label="Hiển thị"
+                            name="visibility"
+                            labelCol={{ span: 24 }}
+                            wrapperCol={{ span: 24 }}
+                            style={{ marginBottom: 10 }}
+                            extra="Công khai: app chưa đăng nhập vẫn thấy. Nội bộ: chỉ CBCS đã đăng nhập."
+                        >
+                            <Select
+                                value={stateContact.visibility}
+                                options={VISIBILITY_OPTIONS}
+                                onChange={(value) => handleOnChange("visibility", value)}
+                            />
+                        </Form.Item>
                         <Form.Item wrapperCol={{ span: 24 }} style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
                             <Button type="primary" htmlType="submit">
                                 Lưu
@@ -435,6 +468,20 @@ export const AdminContact = () => {
                         </Form.Item>
                         <Form.Item label="Số điện thoại" name="mobile" labelCol={{ span: 24 }} wrapperCol={{ span: 24 }} style={{ marginBottom: 10 }}>
                             <InputComponent name="mobile" value={stateContactDetail.mobile} onChange={(e) => handleOnChangeDetail("mobile", e.target.value)} />
+                        </Form.Item>
+                        <Form.Item
+                            label="Hiển thị"
+                            name="visibility"
+                            labelCol={{ span: 24 }}
+                            wrapperCol={{ span: 24 }}
+                            style={{ marginBottom: 10 }}
+                            extra="Công khai: app chưa đăng nhập vẫn thấy. Nội bộ: chỉ CBCS đã đăng nhập."
+                        >
+                            <Select
+                                value={stateContactDetail.visibility}
+                                options={VISIBILITY_OPTIONS}
+                                onChange={(value) => handleOnChangeDetail("visibility", value)}
+                            />
                         </Form.Item>
                         <Form.Item wrapperCol={{ span: 24 }} style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
                             <Button type="primary" htmlType="submit">

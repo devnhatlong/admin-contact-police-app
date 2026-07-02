@@ -29,6 +29,13 @@ const communeService = {
         }
     },
 
+    getPublicCommunes: async (page, pageSize, fields, sort) => {
+        const response = await axiosCommune.get(`${BASE_URL}/public`, {
+            params: { page, pageSize, fields, sort },
+        });
+        return response.data;
+    },
+
     // Lấy chi tiết xã, phường, thị trấn theo ID
     getCommuneById: async (id) => {
         try {

@@ -5,6 +5,7 @@ const { upload } = require("../middlewares/multerMiddleware");
 
 // Commune CRUD
 router.post("/", verifyAccessToken, communeCtrls.createCommune);
+router.get("/public", communeCtrls.listPublicCommunes);
 router.get("/", verifyAccessToken, communeCtrls.listCommunes);
 router.get("/:id", verifyAccessToken, communeCtrls.getCommuneById);
 router.put("/:id", verifyAccessToken, communeCtrls.updateCommune);

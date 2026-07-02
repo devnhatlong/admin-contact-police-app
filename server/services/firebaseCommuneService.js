@@ -1,4 +1,5 @@
 const { getFirestoreDb } = require("../config/firebase");
+const { matchesVisibilityScope, normalizeVisibility } = require("../constants/visibility");
 const admin = require("firebase-admin");
 
 const COLLECTION_NAME = process.env.FIREBASE_COMMUNES_COLLECTION || "communes";
@@ -31,6 +32,7 @@ const buildCommunePayload = (data, includeTimestamps = true) => {
         address: data.address,
         tru_so: data.tru_so,
         sap_nhap: data.sap_nhap,
+        visibility: normalizeVisibility(data.visibility),
     };
 
     if (!includeTimestamps) return commune;
@@ -50,7 +52,7 @@ const createCommune = async (payload) => {
     return mapCommuneDoc(created);
 };
 
-const listCommunes = async ({ page = 1, pageSize = 20, fields = {}, sort }) => {
+const listCommunes = async ({ page = 1, pageSize = 20, fields = {}, sort, visibilityScope = "all" }) => {
     const db = getFirestoreDb();
     const limit = Number(pageSize) > 0 ? Number(pageSize) : 20;
     const pageNumber = Number(page) > 0 ? Number(page) : 1;
@@ -72,6 +74,7 @@ const listCommunes = async ({ page = 1, pageSize = 20, fields = {}, sort }) => {
     const allItems = snapshot.docs.map(mapCommuneDoc);
 
     const filtered = allItems.filter((item) => {
+        if (!matchesVisibilityScope(item, visibilityScope)) return false;
         if (!fields || typeof fields !== "object") return true;
         return Object.entries(fields).every(([k, v]) => {
             if (v === undefined || v === null || v === "") return true;
@@ -154,6 +157,7 @@ const importCommunesFromExcel = async (rows = []) => {
             address: row.address,
             tru_so: row.tru_so,
             sap_nhap: row.sap_nhap,
+            visibility: normalizeVisibility(row.visibility),
         };
 
         // Validate required fields

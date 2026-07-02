@@ -26,13 +26,30 @@ const createContact = asyncHandler(async (req, res) => {
 });
 
 const listContacts = asyncHandler(async (req, res) => {
-    const { page = 1, pageSize, limit, fields, sort } = req.query;
+    const { page = 1, pageSize, limit, fields, sort, visibilityScope = "all" } = req.query;
     const size = pageSize || limit || 20;
-    const result = await firebaseContactService.listContacts({ page, pageSize: size, fields, sort });
+    const result = await firebaseContactService.listContacts({ page, pageSize: size, fields, sort, visibilityScope });
     res.status(200).json({
         success: true,
         ...result,
         message: "Lấy danh sách contact từ Firebase thành công",
+    });
+});
+
+const listPublicContacts = asyncHandler(async (req, res) => {
+    const { page = 1, pageSize, limit, fields, sort } = req.query;
+    const size = pageSize || limit || 20;
+    const result = await firebaseContactService.listContacts({
+        page,
+        pageSize: size,
+        fields,
+        sort,
+        visibilityScope: "public",
+    });
+    res.status(200).json({
+        success: true,
+        ...result,
+        message: "Lấy danh sách liên hệ công khai thành công",
     });
 });
 
@@ -103,6 +120,7 @@ const importFromExcel = asyncHandler(async (req, res) => {
 module.exports = {
     createContact,
     listContacts,
+    listPublicContacts,
     getContactById,
     updateContact,
     deleteContact,
