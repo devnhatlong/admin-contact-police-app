@@ -755,7 +755,7 @@ export const AdminCbcsUser = () => {
                     options={orgUnitOptions}
                     filterOption={filterOrgUnitOption}
                     loading={orgUnitTreeQuery.isLoading}
-                    notFoundContent={orgUnitTreeQuery.isLoading ? 'Đang tải...' : 'Chưa có đơn vị. Vào Đơn vị tổ chức để đồng bộ.'}
+                    notFoundContent={orgUnitTreeQuery.isLoading ? 'Đang tải...' : 'Chưa có đơn vị. Vào Đơn vị tổ chức để tạo.'}
                     optionFilterProp="label"
                 />
             </Form.Item>
