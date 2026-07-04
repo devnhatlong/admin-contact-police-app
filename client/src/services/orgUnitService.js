@@ -38,11 +38,6 @@ const orgUnitService = {
         const response = await axiosOrgUnit.put(`${BASE_URL}/${id}/active`, { isActive });
         return response.data;
     },
-
-    syncFromCommunes: async (data = {}) => {
-        const response = await axiosOrgUnit.post(`${BASE_URL}/sync-from-communes`, data);
-        return response.data;
-    },
 };
 
 export default orgUnitService;

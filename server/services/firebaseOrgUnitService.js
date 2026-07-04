@@ -4,11 +4,8 @@ const {
     COLLECTION_NAME,
     validateOrgUnit,
     sanitizeOrgUnitInput,
-    mapLoaiToOrgType,
     CHILD_TYPES_BY_PARENT,
 } = require("../schemas/orgUnitSchema");
-const { normalizeVisibility } = require("../constants/visibility");
-const firebaseCommuneService = require("./firebaseCommuneService");
 
 const mapOrgUnitDoc = (doc) => {
     if (!doc || !doc.exists) return null;
@@ -151,6 +148,7 @@ const updateOrgUnit = async (id, payload) => {
         sortOrder: data.sortOrder,
         isActive: data.isActive,
         visibility: data.visibility,
+        unitProfile: data.unitProfile,
         updatedAt: timestamp,
     });
 
@@ -173,72 +171,6 @@ const setOrgUnitActive = async (id, isActive) => {
     return mapOrgUnitDoc(updated);
 };
 
-const syncFromCommunes = async ({ provinceName = "Công an tỉnh Lâm Đồng", provinceCode = "CAT_LD" } = {}) => {
-    const db = getFirestoreDb();
-    const timestamp = admin.firestore.FieldValue.serverTimestamp();
-
-    let root = (await listAllOrgUnits()).find((item) => item.orgUnitType === "tinh");
-    if (!root) {
-        const rootRef = db.collection(COLLECTION_NAME).doc();
-        await rootRef.set({
-            code: provinceCode,
-            name: provinceName,
-            shortName: provinceName,
-            orgUnitType: "tinh",
-            parentId: null,
-            orgPath: [],
-            communeId: null,
-            sortOrder: 0,
-            isActive: true,
-            visibility: normalizeVisibility("internal"),
-            createdAt: timestamp,
-            updatedAt: timestamp,
-        });
-        root = mapOrgUnitDoc(await rootRef.get());
-    }
-
-    const communesResult = await firebaseCommuneService.listCommunes({ page: 1, pageSize: 5000 });
-    const communes = communesResult.items || [];
-    const existing = await listAllOrgUnits();
-    const byCommuneId = new Map(existing.filter((item) => item.communeId).map((item) => [item.communeId, item]));
-
-    let createdCount = 0;
-    let skippedCount = 0;
-
-    for (const commune of communes) {
-        const communeId = commune._id || commune.id;
-        if (byCommuneId.has(communeId)) {
-            skippedCount += 1;
-            continue;
-        }
-
-        const docRef = db.collection(COLLECTION_NAME).doc();
-        const orgUnitType = mapLoaiToOrgType(commune.loai);
-        await docRef.set({
-            code: commune.ma_xa,
-            name: commune.name || commune.ten_xa,
-            shortName: commune.ten_xa,
-            orgUnitType,
-            parentId: root._id,
-            orgPath: [root._id],
-            communeId,
-            sortOrder: Number(commune.cap) || 0,
-            isActive: true,
-            visibility: normalizeVisibility(commune.visibility),
-            createdAt: timestamp,
-            updatedAt: timestamp,
-        });
-        createdCount += 1;
-    }
-
-    return {
-        rootId: root._id,
-        createdCount,
-        skippedCount,
-        totalCommunes: communes.length,
-    };
-};
-
 const isUnderOrgUnit = (item, orgUnitId) => {
     if (!orgUnitId) return true;
     const unitId = item.organization?.orgUnitId || item.orgUnitId;
@@ -256,6 +188,5 @@ module.exports = {
     createOrgUnit,
     updateOrgUnit,
     setOrgUnitActive,
-    syncFromCommunes,
     isUnderOrgUnit,
 };

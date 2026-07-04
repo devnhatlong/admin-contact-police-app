@@ -54,6 +54,16 @@ const ORG_UNIT_SCHEMA = {
     sortOrder: { type: "number", default: 0 },
     isActive: { type: "boolean", default: true },
     visibility: { type: "string", enum: VISIBILITY_VALUES, default: DEFAULT_VISIBILITY },
+    unitProfile: {
+        type: "object",
+        required: false,
+        fields: {
+            chief: { type: "string", nullable: true, description: "Trưởng phòng / Trưởng CA xã" },
+            hotline: { type: "string", nullable: true, description: "SĐT đơn vị hiển thị danh bạ" },
+            address: { type: "string", nullable: true },
+            truSo: { type: "string", nullable: true, description: "Trụ sở" },
+        },
+    },
 };
 
 const mapLoaiToOrgType = (loai = "") => {
@@ -93,6 +103,23 @@ const validateOrgUnit = (data, isUpdate = false) => {
     return { isValid: errors.length === 0, errors };
 };
 
+const sanitizeUnitProfile = (profile) => {
+    if (!profile || typeof profile !== "object") {
+        return { chief: null, hotline: null, address: null, truSo: null };
+    }
+    const trimOrNull = (value) => {
+        if (value === undefined || value === null) return null;
+        const trimmed = String(value).trim();
+        return trimmed === "" ? null : trimmed;
+    };
+    return {
+        chief: trimOrNull(profile.chief),
+        hotline: trimOrNull(profile.hotline),
+        address: trimOrNull(profile.address),
+        truSo: trimOrNull(profile.truSo),
+    };
+};
+
 const sanitizeOrgUnitInput = (data) => ({
     code: data.code?.trim(),
     name: data.name?.trim(),
@@ -103,12 +130,19 @@ const sanitizeOrgUnitInput = (data) => ({
     sortOrder: data.sortOrder !== undefined ? Number(data.sortOrder) : 0,
     isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
     visibility: normalizeVisibility(data.visibility),
+    unitProfile: sanitizeUnitProfile(data.unitProfile),
 });
 
 const getDefaultOrgUnitData = () => ({
     sortOrder: 0,
     isActive: true,
     visibility: DEFAULT_VISIBILITY,
+    unitProfile: {
+        chief: null,
+        hotline: null,
+        address: null,
+        truSo: null,
+    },
 });
 
 module.exports = {
@@ -120,5 +154,6 @@ module.exports = {
     mapLoaiToOrgType,
     validateOrgUnit,
     sanitizeOrgUnitInput,
+    sanitizeUnitProfile,
     getDefaultOrgUnitData,
 };

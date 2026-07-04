@@ -223,7 +223,7 @@ export const Dashboard = () => {
                                                     hoverable
                                                     onClick={() => navigate(PATHS.ADMIN.COMMUNE)}
                                                 >
-                                                    <p>Xã/Phường và Liên hệ — dữ liệu gốc, sẽ được đồng bộ sang Danh bạ.</p>
+                                                    <p>Xã/Phường và Liên hệ — dữ liệu app cũ đang chạy, quản lý riêng, không liên kết Danh bạ mới.</p>
                                                 </Card>
                                             </Col>
                                         </Row>
