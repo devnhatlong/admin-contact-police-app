@@ -48,6 +48,7 @@ export const PATHS = {
         USER: `${ROOTS_ADMIN}/user`,
         CBCS_USER: `${ROOTS_ADMIN}/cbcs-user`,
         ORG_UNIT: `${ROOTS_ADMIN}/org-unit`,
+        JOB_POSITION: `${ROOTS_ADMIN}/job-position`,
         DEPARTMENT: `${ROOTS_ADMIN}/department`,
         PROVINCE: '/admin/province',
         DISTRICT: '/admin/district',

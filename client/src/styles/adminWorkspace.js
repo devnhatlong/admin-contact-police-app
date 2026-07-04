@@ -117,11 +117,6 @@ export const TableWrapper = styled.div`
         overflow-y: auto !important;
     }
 
-    .ant-pagination {
-        flex-shrink: 0;
-        margin: 12px 0 8px !important;
-    }
-
     .ant-table-thead > tr > th {
         background: #f8fafc !important;
         color: #64748b !important;
@@ -149,8 +144,47 @@ export const TableWrapper = styled.div`
 
 export const TableFooter = styled.div`
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     padding: 12px 24px 16px;
     color: #64748b;
     font-size: 13px;
     border-top: 1px solid #eef1f5;
+
+    .table-footer-total {
+        flex-shrink: 0;
+    }
+
+    .table-footer-pagination {
+        margin: 0 !important;
+    }
 `;
+
+export const TABLE_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+export const DEFAULT_TABLE_PAGE_SIZE = 10;
+
+export const buildTablePagination = ({
+    currentPage,
+    pageSize,
+    total,
+    onChange,
+    showSizeChanger = true,
+}) => ({
+    current: currentPage,
+    pageSize,
+    total,
+    onChange,
+    showSizeChanger,
+    pageSizeOptions: TABLE_PAGE_SIZE_OPTIONS,
+});
+
+export const getTableRowStt = (currentPage, pageSize, index) => (
+    (currentPage - 1) * pageSize + index + 1
+);
+
+export const sliceTablePage = (items, { currentPage, pageSize }) => {
+    const start = (currentPage - 1) * pageSize;
+    return items.slice(start, start + pageSize);
+};

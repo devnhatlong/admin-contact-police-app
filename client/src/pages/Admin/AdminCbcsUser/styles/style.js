@@ -7,7 +7,7 @@ export {
     UnitHeader,
     Toolbar,
     TableWrapper,
-    TableFooter,
+    DEFAULT_TABLE_PAGE_SIZE,
 } from '../../../../styles/adminWorkspace';
 
 export const WrapperHeader = styled.h1`

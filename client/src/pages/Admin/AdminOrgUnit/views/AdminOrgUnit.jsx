@@ -22,6 +22,7 @@ import {
     DEFAULT_VISIBILITY,
 } from '../../../../constants/visibility';
 import orgUnitService from '../../../../services/orgUnitService';
+import TablePaginationFooter from '../../../../components/TablePaginationFooter/TablePaginationFooter';
 import { WrapperHeader } from '../styles/style';
 import {
     WorkspaceLayout,
@@ -30,7 +31,9 @@ import {
     UnitHeader,
     Toolbar,
     TableWrapper,
-    TableFooter,
+    DEFAULT_TABLE_PAGE_SIZE,
+    getTableRowStt,
+    sliceTablePage,
 } from '../../../../styles/adminWorkspace';
 
 const EMPTY_CHILD_FORM = {
@@ -48,12 +51,20 @@ export const AdminOrgUnit = () => {
     const [form] = Form.useForm();
     const [selectedUnit, setSelectedUnit] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pagination, setPagination] = useState({
+        currentPage: 1,
+        pageSize: DEFAULT_TABLE_PAGE_SIZE,
+    });
 
     useEffect(() => {
         if (user?.role !== ROLE.ADMIN) {
             navigate(`${PATHS.ROOT}`);
         }
     }, [user, navigate]);
+
+    useEffect(() => {
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    }, [selectedUnit?._id, selectedUnit?.id]);
 
     const treeQuery = useQuery({
         queryKey: ['org-unit-tree'],
@@ -86,6 +97,11 @@ export const AdminOrgUnit = () => {
             key: item._id || item.id,
         }));
     }, [treeData, selectedUnit]);
+
+    const pagedChildrenRows = useMemo(
+        () => sliceTablePage(childrenRows, pagination),
+        [childrenRows, pagination]
+    );
 
     const syncMutation = useMutation({
         mutationFn: () => orgUnitService.syncFromCommunes(),
@@ -148,8 +164,18 @@ export const AdminOrgUnit = () => {
         });
     };
 
+    const handlePageChange = (page, pageSize) => {
+        setPagination({ currentPage: page, pageSize });
+    };
+
     const columns = [
-        { title: 'STT', key: 'stt', width: 60, align: 'center', render: (_, __, index) => index + 1 },
+        {
+            title: 'STT',
+            key: 'stt',
+            width: 60,
+            align: 'center',
+            render: (_, __, index) => getTableRowStt(pagination.currentPage, pagination.pageSize, index),
+        },
         { title: 'Mã', dataIndex: 'code', key: 'code', width: 120 },
         { title: 'Tên', dataIndex: 'name', key: 'name' },
         {
@@ -243,7 +269,7 @@ export const AdminOrgUnit = () => {
                         <Table
                             rowKey="key"
                             columns={columns}
-                            dataSource={selectedUnit ? childrenRows : []}
+                            dataSource={selectedUnit ? pagedChildrenRows : []}
                             pagination={false}
                             locale={{
                                 emptyText: selectedUnit
@@ -253,9 +279,12 @@ export const AdminOrgUnit = () => {
                         />
                     </TableWrapper>
 
-                    <TableFooter>
-                        Tổng số {childrenRows.length} mục
-                    </TableFooter>
+                    <TablePaginationFooter
+                        total={childrenRows.length}
+                        currentPage={pagination.currentPage}
+                        pageSize={pagination.pageSize}
+                        onChange={handlePageChange}
+                    />
                 </MainPanel>
             </WorkspaceLayout>
 

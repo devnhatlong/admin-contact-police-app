@@ -10,6 +10,7 @@ import { getItem } from "../../../utils/utils";
 import { AdminUser } from "../../Admin/AdminUser/views/AdminUser";
 import { AdminCbcsUser } from "../../Admin/AdminCbcsUser/views/AdminCbcsUser";
 import { AdminOrgUnit } from "../../Admin/AdminOrgUnit/views/AdminOrgUnit";
+import { AdminJobPosition } from "../../Admin/AdminJobPosition/views/AdminJobPosition";
 import { PATHS } from '../../../constants/path';
 import { AdminCommune } from "../../Admin/AdminCommune/views/AdminCommune";
 import { AdminContact } from "../../Admin/AdminContact/views/AdminContact";
@@ -56,6 +57,7 @@ export const Dashboard = () => {
                 getItem('Tài khoản quản trị web', PATHS.ADMIN.USER, null, null, menuChildrenItemStyle),
                 getItem('Tài khoản CBCS App', PATHS.ADMIN.CBCS_USER, null, null, menuChildrenItemStyle),
                 getItem('Đơn vị tổ chức', PATHS.ADMIN.ORG_UNIT, null, null, menuChildrenItemStyle),
+                getItem('Danh mục chức vụ', PATHS.ADMIN.JOB_POSITION, null, null, menuChildrenItemStyle),
                 getItem('Xã / Phường', PATHS.ADMIN.COMMUNE, null, null, menuChildrenItemStyle),
                 getItem('Liên hệ', PATHS.ADMIN.CONTACT, null, null, menuChildrenItemStyle),
             ]
@@ -86,6 +88,7 @@ export const Dashboard = () => {
             [PATHS.ADMIN.USER]: 'admin',
             [PATHS.ADMIN.CBCS_USER]: 'admin',
             [PATHS.ADMIN.ORG_UNIT]: 'admin',
+            [PATHS.ADMIN.JOB_POSITION]: 'admin',
             [PATHS.ADMIN.COMMUNE]: 'admin',
             [PATHS.ADMIN.CONTACT]: 'admin',
         };
@@ -164,6 +167,7 @@ export const Dashboard = () => {
                         <Route path={PATHS.ADMIN.USER} element={<AdminUser />} />
                         <Route path={PATHS.ADMIN.CBCS_USER} element={<AdminCbcsUser />} />
                         <Route path={PATHS.ADMIN.ORG_UNIT} element={<AdminOrgUnit />} />
+                        <Route path={PATHS.ADMIN.JOB_POSITION} element={<AdminJobPosition />} />
                         <Route path={PATHS.ADMIN.COMMUNE} element={<AdminCommune />} />
                         <Route path={PATHS.ADMIN.CONTACT} element={<AdminContact />} />
                         <Route

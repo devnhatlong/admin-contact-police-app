@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { WrapperHeader, WorkspaceLayout, SidebarPanel, MainPanel, UnitHeader, Toolbar, TableWrapper, TableFooter, AccountNameLink, ActionGroup } from '../styles/style';
+import { WrapperHeader, WorkspaceLayout, SidebarPanel, MainPanel, UnitHeader, Toolbar, TableWrapper, AccountNameLink, ActionGroup, DEFAULT_TABLE_PAGE_SIZE } from '../styles/style';
+import TablePaginationFooter from '../../../../components/TablePaginationFooter/TablePaginationFooter';
 import { Button, Form, Select, Space, Popover, Tag, InputNumber, Descriptions, Table, Input } from 'antd';
 import {
     PlusOutlined,
@@ -30,6 +31,7 @@ import { PATHS } from '../../../../constants/path';
 import { formatOrgUnitTitle } from '../../../../constants/orgUnit';
 import cbcsUserService from '../../../../services/cbcsUserService';
 import orgUnitService from '../../../../services/orgUnitService';
+import jobPositionService from '../../../../services/jobPositionService';
 import {
     ACCOUNT_STATUS,
     ACCOUNT_STATUS_LABELS,
@@ -83,7 +85,7 @@ export const AdminCbcsUser = () => {
     const [filters, setFilters] = useState({});
     const [dataTable, setDataTable] = useState([]);
     const [resetSelection, setResetSelection] = useState(false);
-    const [pagination, setPagination] = useState({ currentPage: 1, pageSize: 10 });
+    const [pagination, setPagination] = useState({ currentPage: 1, pageSize: DEFAULT_TABLE_PAGE_SIZE });
     const [stateUser, setStateUser] = useState(EMPTY_FORM);
     const [stateUserDetail, setStateUserDetail] = useState(EMPTY_FORM);
     const [selectedOrgUnit, setSelectedOrgUnit] = useState(null);
@@ -143,6 +145,12 @@ export const AdminCbcsUser = () => {
         staleTime: 5 * 60 * 1000,
     });
 
+    const jobPositionQuery = useQuery({
+        queryKey: ['job-positions-cbcs'],
+        queryFn: () => jobPositionService.getJobPositions(false),
+        staleTime: 5 * 60 * 1000,
+    });
+
     const orgUnitTree = orgUnitTreeQuery.data?.data || [];
 
     const flatOrgUnits = useMemo(() => flattenOrgUnits(orgUnitTree), [orgUnitTree]);
@@ -154,6 +162,14 @@ export const AdminCbcsUser = () => {
             unit,
         })),
         [flatOrgUnits]
+    );
+
+    const positionOptions = useMemo(
+        () => (jobPositionQuery.data?.items || []).map((item) => ({
+            value: item.name,
+            label: item.name,
+        })),
+        [jobPositionQuery.data]
     );
 
     const { isLoading: isLoadingAllRecords, data: allRecords, refetch } = query;
@@ -634,11 +650,16 @@ export const AdminCbcsUser = () => {
                 labelCol={{ span: 24 }}
                 wrapperCol={{ span: 24 }}
             >
-                <InputComponent
-                    name="position"
-                    value={values.position}
-                    placeholder="Cán bộ"
-                    onChange={(e) => onChange('position', e.target.value)}
+                <Select
+                    showSearch
+                    allowClear
+                    placeholder="Chọn chức vụ"
+                    value={values.position || undefined}
+                    onChange={(value) => onChange('position', value || '')}
+                    options={positionOptions}
+                    loading={jobPositionQuery.isLoading}
+                    notFoundContent={jobPositionQuery.isLoading ? 'Đang tải...' : 'Chưa có chức vụ. Vào Danh mục chức vụ để thêm.'}
+                    optionFilterProp="label"
                 />
             </Form.Item>
 
@@ -798,14 +819,7 @@ export const AdminCbcsUser = () => {
                             columns={columns}
                             dataSource={displayData}
                             loading={isLoadingAllRecords || isLoadingResetFilter}
-                            pagination={{
-                                current: pagination.currentPage,
-                                pageSize: pagination.pageSize,
-                                total: allRecords?.total,
-                                onChange: handlePageChange,
-                                showSizeChanger: false,
-                                showTotal: (total) => null,
-                            }}
+                            pagination={false}
                             locale={{ emptyText: 'Không tìm thấy tài khoản phù hợp' }}
                             onRow={(record) => ({
                                 onClick: () => {
@@ -821,9 +835,12 @@ export const AdminCbcsUser = () => {
                         />
                     </TableWrapper>
 
-                    <TableFooter>
-                        Tổng số {allRecords?.total ?? displayData.length} mục
-                    </TableFooter>
+                    <TablePaginationFooter
+                        total={allRecords?.total ?? displayData.length}
+                        currentPage={pagination.currentPage}
+                        pageSize={pagination.pageSize}
+                        onChange={handlePageChange}
+                    />
                 </MainPanel>
             </WorkspaceLayout>
 
