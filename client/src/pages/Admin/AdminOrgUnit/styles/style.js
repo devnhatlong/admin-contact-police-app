@@ -5,3 +5,9 @@ export const WrapperHeader = styled.h1`
     font-size: 30px;
     font-weight: 500;
 `;
+
+export const FormListHeader = styled.div`
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+`;

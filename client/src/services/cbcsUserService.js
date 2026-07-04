@@ -5,9 +5,9 @@ export const axiosCbcsUser = createAxiosInstance();
 const BASE_URL = `${process.env.REACT_APP_SERVER_URL}/app-users`;
 
 const cbcsUserService = {
-    getAppUsers: async (page, pageSize, fields, sort) => {
+    getAppUsers: async (page, pageSize, fields, sort, orgUnitId) => {
         const response = await axiosCbcsUser.get(`${BASE_URL}/`, {
-            params: { page, pageSize, fields, sort },
+            params: { page, pageSize, fields, sort, orgUnitId },
         });
         return response.data;
     },

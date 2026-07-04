@@ -16,6 +16,7 @@ const {
     getLoginIdentifierDocId,
     normalizePhone,
 } = require("../schemas/loginIdentifierSchema");
+const { getOrgUnit, isUnderOrgUnit } = require("./firebaseOrgUnitService");
 
 const mapAppUserDoc = (doc) => {
     if (!doc || !doc.exists) return null;
@@ -53,7 +54,7 @@ const flattenForFilter = (item) => {
     return values.filter(Boolean).join(" ").toLowerCase();
 };
 
-const listAppUsers = async ({ page = 1, pageSize = 20, fields = {}, sort }) => {
+const listAppUsers = async ({ page = 1, pageSize = 20, fields = {}, sort, orgUnitId }) => {
     const db = getFirestoreDb();
     const limit = Number(pageSize) > 0 ? Number(pageSize) : 20;
     const pageNumber = Number(page) > 0 ? Number(page) : 1;
@@ -76,6 +77,7 @@ const listAppUsers = async ({ page = 1, pageSize = 20, fields = {}, sort }) => {
     const parsedFields = typeof fields === "string" ? JSON.parse(fields) : fields;
 
     const filtered = allItems.filter((item) => {
+        if (orgUnitId && !isUnderOrgUnit(item, orgUnitId)) return false;
         if (!parsedFields || typeof parsedFields !== "object") return true;
         return Object.entries(parsedFields).every(([key, value]) => {
             if (value === undefined || value === null || value === "") return true;
@@ -145,6 +147,15 @@ const createAppUser = async (payload, createdBy) => {
         throw err;
     }
 
+    const orgUnit = await getOrgUnit(createInput.orgUnitId);
+    if (!orgUnit) {
+        const err = new Error("Không tìm thấy đơn vị tổ chức");
+        err.statusCode = 404;
+        throw err;
+    }
+
+    const orgPath = [...(orgUnit.orgPath || []), orgUnit._id];
+
     const pendingUid = `pending_${crypto.randomUUID().replace(/-/g, "")}`;
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
     const document = buildAppUserDocument({
@@ -152,9 +163,9 @@ const createAppUser = async (payload, createdBy) => {
         createInput,
         createdBy,
         organization: {
-            orgUnitName: payload.orgUnitName || null,
-            orgUnitType: payload.orgUnitType || null,
-            orgPath: payload.orgPath || [],
+            orgUnitName: orgUnit.name,
+            orgUnitType: orgUnit.orgUnitType,
+            orgPath,
         },
     });
 
@@ -216,9 +227,17 @@ const updateAppUser = async (id, payload) => {
         updates["profile.position"] = payload.position?.trim() || null;
     }
     if (payload.orgUnitId !== undefined) {
-        updates["organization.orgUnitId"] = payload.orgUnitId.trim();
-    }
-    if (payload.orgUnitName !== undefined) {
+        const orgUnit = await getOrgUnit(payload.orgUnitId.trim());
+        if (!orgUnit) {
+            const err = new Error("Không tìm thấy đơn vị tổ chức");
+            err.statusCode = 404;
+            throw err;
+        }
+        updates["organization.orgUnitId"] = orgUnit._id;
+        updates["organization.orgUnitName"] = orgUnit.name;
+        updates["organization.orgUnitType"] = orgUnit.orgUnitType;
+        updates["organization.orgPath"] = [...(orgUnit.orgPath || []), orgUnit._id];
+    } else if (payload.orgUnitName !== undefined) {
         updates["organization.orgUnitName"] = payload.orgUnitName;
     }
     if (payload.orgUnitType !== undefined) {

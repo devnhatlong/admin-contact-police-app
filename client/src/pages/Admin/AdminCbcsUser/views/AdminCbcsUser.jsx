@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { FormListHeader, WrapperHeader } from '../styles/style';
-import { Button, Form, Select, Space, Popover, Tag, InputNumber, Descriptions } from 'antd';
+import { WrapperHeader, WorkspaceLayout, SidebarPanel, MainPanel, UnitHeader, Toolbar, TableWrapper, TableFooter, AccountNameLink, ActionGroup } from '../styles/style';
+import { Button, Form, Select, Space, Popover, Tag, InputNumber, Descriptions, Table, Input } from 'antd';
 import {
     PlusOutlined,
     EditOutlined,
@@ -16,7 +16,6 @@ import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 
-import TableComponent from '../../../../components/TableComponent/TableComponent';
 import InputComponent from '../../../../components/InputComponent/InputComponent';
 import ModalComponent from '../../../../components/ModalComponent/ModalComponent';
 import Loading from '../../../../components/LoadingComponent/Loading';
@@ -25,10 +24,12 @@ import { useMutationHooks } from '../../../../hooks/useMutationHook';
 import DrawerComponent from '../../../../components/DrawerComponent/DrawerComponent';
 import { WrapperContentPopup } from '../../../../components/NavbarLoginComponent/style';
 import BreadcrumbComponent from '../../../../components/BreadcrumbComponent/BreadcrumbComponent';
+import OrgUnitTree from '../../../../components/OrgUnitTree/OrgUnitTree';
 import { ROLE } from '../../../../constants/role';
 import { PATHS } from '../../../../constants/path';
+import { formatOrgUnitTitle } from '../../../../constants/orgUnit';
 import cbcsUserService from '../../../../services/cbcsUserService';
-import communeService from '../../../../services/communeService';
+import orgUnitService from '../../../../services/orgUnitService';
 import {
     ACCOUNT_STATUS,
     ACCOUNT_STATUS_LABELS,
@@ -54,6 +55,14 @@ const EMPTY_FORM = {
     maxDevices: 2,
 };
 
+const flattenOrgUnits = (nodes = [], acc = []) => {
+    nodes.forEach((node) => {
+        acc.push(node);
+        if (node.children?.length) flattenOrgUnits(node.children, acc);
+    });
+    return acc;
+};
+
 const formatTimestamp = (value) => {
     if (!value) return '';
     const date = value.toDate ? value.toDate() : value;
@@ -77,7 +86,11 @@ export const AdminCbcsUser = () => {
     const [pagination, setPagination] = useState({ currentPage: 1, pageSize: 10 });
     const [stateUser, setStateUser] = useState(EMPTY_FORM);
     const [stateUserDetail, setStateUserDetail] = useState(EMPTY_FORM);
+    const [selectedOrgUnit, setSelectedOrgUnit] = useState(null);
+    const [selectedOrgUnitId, setSelectedOrgUnitId] = useState(null);
     const [selectedRecord, setSelectedRecord] = useState(null);
+    const [searchKeyword, setSearchKeyword] = useState('');
+    const [roleFilter, setRoleFilter] = useState(null);
 
     const user = useSelector((state) => state?.user);
     const navigate = useNavigate();
@@ -114,34 +127,34 @@ export const AdminCbcsUser = () => {
     const { data, isSuccess, isError, isPending } = mutation;
     const { data: dataUpdated, isSuccess: isSuccessUpdated, isError: isErrorUpdated } = mutationUpdate;
 
-    const getAppUsers = async (currentPage, pageSize, filterFields) => {
-        return cbcsUserService.getAppUsers(currentPage, pageSize, filterFields);
+    const getAppUsers = async (currentPage, pageSize, filterFields, orgUnitId) => {
+        return cbcsUserService.getAppUsers(currentPage, pageSize, filterFields, null, orgUnitId);
     };
 
     const query = useQuery({
-        queryKey: ['app-users', pagination.currentPage, pagination.pageSize, filters],
-        queryFn: () => getAppUsers(pagination.currentPage, pagination.pageSize, filters),
+        queryKey: ['app-users', pagination.currentPage, pagination.pageSize, filters, selectedOrgUnitId],
+        queryFn: () => getAppUsers(pagination.currentPage, pagination.pageSize, filters, selectedOrgUnitId),
         retry: 2,
     });
 
-    const communeQuery = useQuery({
-        queryKey: ['communes-for-cbcs-select'],
-        queryFn: () => communeService.getCommunes(1, 2000),
+    const orgUnitTreeQuery = useQuery({
+        queryKey: ['org-unit-tree-cbcs'],
+        queryFn: () => orgUnitService.getOrgUnitTree(false),
         staleTime: 5 * 60 * 1000,
     });
 
-    const communeOptions = useMemo(() => {
-        const items = communeQuery.data?.items || communeQuery.data?.data || [];
-        return items.map((commune) => {
-            const id = commune._id || commune.id;
-            const displayName = commune.name || commune.ten_xa || '';
-            return {
-                value: id,
-                label: `${commune.ma_xa} — ${displayName}`,
-                commune,
-            };
-        });
-    }, [communeQuery.data]);
+    const orgUnitTree = orgUnitTreeQuery.data?.data || [];
+
+    const flatOrgUnits = useMemo(() => flattenOrgUnits(orgUnitTree), [orgUnitTree]);
+
+    const orgUnitOptions = useMemo(
+        () => flatOrgUnits.map((unit) => ({
+            value: unit._id || unit.id,
+            label: formatOrgUnitTitle(unit),
+            unit,
+        })),
+        [flatOrgUnits]
+    );
 
     const { isLoading: isLoadingAllRecords, data: allRecords, refetch } = query;
 
@@ -215,6 +228,8 @@ export const AdminCbcsUser = () => {
                     authEmail: item.auth?.authEmail || item.authEmail,
                     orgUnitName: item.organization?.orgUnitName || item.orgUnitId || item.orgUnitName,
                     roleCode: item.role?.roleCode || item.roleCode,
+                    rank: item.profile?.rank || '',
+                    position: item.profile?.position || '',
                     accountStatus: item.status?.accountStatus || item.accountStatus,
                     emailStatus: item.status?.emailStatus || item.emailStatus,
                     createdAt: formatTimestamp(item.metadata?.createdAt || item.createdAt),
@@ -222,6 +237,22 @@ export const AdminCbcsUser = () => {
             );
         }
     }, [allRecords]);
+
+    const displayData = useMemo(() => {
+        let rows = dataTable;
+        if (searchKeyword.trim()) {
+            const kw = searchKeyword.trim().toLowerCase();
+            rows = rows.filter((row) => [row.fullName, row.loginPhone, row.soHieuCand, row.authEmail]
+                .some((val) => val && String(val).toLowerCase().includes(kw)));
+        }
+        if (roleFilter) {
+            rows = rows.filter((row) => row.roleCode === roleFilter);
+        }
+        return rows.map((row, index) => ({
+            ...row,
+            stt: (pagination.currentPage - 1) * pagination.pageSize + index + 1,
+        }));
+    }, [dataTable, searchKeyword, roleFilter, pagination.currentPage, pagination.pageSize]);
 
     const handleCancel = () => {
         setIsModalOpen(false);
@@ -254,11 +285,11 @@ export const AdminCbcsUser = () => {
             return;
         }
 
-        const selected = communeOptions.find((option) => option.value === orgUnitId);
+        const selected = orgUnitOptions.find((option) => option.value === orgUnitId);
         const patch = {
             orgUnitId,
-            orgUnitName: selected?.commune?.name || selected?.commune?.ten_xa || '',
-            orgUnitType: selected?.commune?.loai || '',
+            orgUnitName: selected?.unit?.name || '',
+            orgUnitType: selected?.unit?.orgUnitType || '',
         };
 
         if (isDetail) {
@@ -270,20 +301,20 @@ export const AdminCbcsUser = () => {
         }
     };
 
-    const filterCommuneOption = (input, option) => {
-        const keyword = input.toLowerCase();
-        const commune = option?.commune;
-        if (!commune) return false;
-        const searchText = [
-            commune.ma_xa,
-            commune.ten_xa,
-            commune.name,
-            commune.loai,
-        ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-        return searchText.includes(keyword);
+    const filterOrgUnitOption = (input, option) => (
+        (option?.label || '').toLowerCase().includes(input.toLowerCase())
+    );
+
+    const openCreateModal = () => {
+        const nextForm = { ...EMPTY_FORM };
+        if (selectedOrgUnit) {
+            nextForm.orgUnitId = selectedOrgUnit._id || selectedOrgUnit.id;
+            nextForm.orgUnitName = selectedOrgUnit.name;
+            nextForm.orgUnitType = selectedOrgUnit.orgUnitType;
+        }
+        setStateUser(nextForm);
+        modalForm.setFieldsValue(nextForm);
+        setIsModalOpen(true);
     };
 
     const onFinish = () => {
@@ -464,86 +495,85 @@ export const AdminCbcsUser = () => {
         </div>
     );
 
-    const renderAction = () => (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+    const renderAction = (_, record) => (
+        <ActionGroup onClick={(e) => e.stopPropagation()}>
             <EditOutlined
-                style={{ color: 'orange', fontSize: '18px', cursor: 'pointer' }}
-                onClick={(e) => {
-                    e.stopPropagation();
+                className="action-edit"
+                onClick={() => {
+                    setRowSelected(record._id);
+                    setSelectedRecord(record);
                     setIsOpenDrawer(true);
                 }}
             />
-            <Popover placement="bottom" overlayInnerStyle={{ padding: 0 }} content={actionContent}>
-                <MenuOutlined style={{ color: '#1677ff', fontSize: '18px', cursor: 'pointer' }} />
+            <Popover
+                placement="bottomLeft"
+                overlayInnerStyle={{ padding: 0 }}
+                content={actionContent}
+                trigger="click"
+            >
+                <MenuOutlined
+                    className="action-more"
+                    onClick={() => {
+                        setRowSelected(record._id);
+                        setSelectedRecord(record);
+                    }}
+                />
             </Popover>
-        </div>
+        </ActionGroup>
     );
 
     const columns = [
         {
-            title: 'Họ tên',
-            dataIndex: 'fullName',
-            key: 'fullName',
-            ...getColumnSearchProps('fullName', 'họ tên'),
+            title: 'STT',
+            dataIndex: 'stt',
+            key: 'stt',
+            width: 60,
+            align: 'center',
         },
         {
-            title: 'Số hiệu CAND',
-            dataIndex: 'soHieuCand',
-            key: 'soHieuCand',
-            ...getColumnSearchProps('soHieuCand', 'số hiệu CAND'),
-        },
-        {
-            title: 'SĐT đăng nhập',
+            title: 'Tên tài khoản',
             dataIndex: 'loginPhone',
             key: 'loginPhone',
-            ...getColumnSearchProps('loginPhone', 'số điện thoại'),
+            render: (phone, record) => (
+                <AccountNameLink
+                    onClick={() => {
+                        setRowSelected(record._id);
+                        setSelectedRecord(record);
+                        setIsOpenDrawer(true);
+                    }}
+                >
+                    {phone || '—'}
+                </AccountNameLink>
+            ),
         },
         {
-            title: 'Email xác thực',
-            dataIndex: 'authEmail',
-            key: 'authEmail',
-            ...getColumnSearchProps('authEmail', 'email'),
-        },
-        {
-            title: 'Đơn vị',
-            dataIndex: 'orgUnitName',
-            key: 'orgUnitName',
-            ...getColumnSearchProps('orgUnitName', 'đơn vị'),
+            title: 'Họ và tên',
+            dataIndex: 'fullName',
+            key: 'fullName',
         },
         {
             title: 'Vai trò',
             dataIndex: 'roleCode',
             key: 'roleCode',
-            render: (code) => ROLE_CODE_LABELS[code] || code,
+            render: (code) => ROLE_CODE_LABELS[code] || code || '—',
         },
         {
-            title: 'TT tài khoản',
+            title: 'Cấp bậc',
+            dataIndex: 'rank',
+            key: 'rank',
+            render: (val) => val || '—',
+        },
+        {
+            title: 'Trạng thái',
             dataIndex: 'accountStatus',
             key: 'accountStatus',
             render: renderStatusTag,
         },
         {
-            title: 'TT email',
-            dataIndex: 'emailStatus',
-            key: 'emailStatus',
-            render: renderEmailStatusTag,
-        },
-        {
-            title: 'Ngày tạo',
-            dataIndex: 'createdAt',
-            key: 'createdAt',
-        },
-        {
-            title: (
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <ReloadOutlined
-                        style={{ color: '#1677ff', fontSize: '18px', cursor: 'pointer' }}
-                        onClick={handleResetAllFilter}
-                    />
-                </div>
-            ),
-            dataIndex: 'action',
+            title: 'Thao tác',
+            key: 'action',
             width: 100,
+            align: 'center',
             render: renderAction,
         },
     ];
@@ -663,13 +693,13 @@ export const AdminCbcsUser = () => {
                 <Select
                     showSearch
                     allowClear
-                    placeholder="Tìm theo mã hoặc tên đơn vị"
+                    placeholder="Chọn đơn vị trong cây tổ chức"
                     value={values.orgUnitId || undefined}
                     onChange={(value) => handleOrgUnitChange(value, !isCreate)}
-                    options={communeOptions}
-                    filterOption={filterCommuneOption}
-                    loading={communeQuery.isLoading}
-                    notFoundContent={communeQuery.isLoading ? 'Đang tải...' : 'Không tìm thấy đơn vị'}
+                    options={orgUnitOptions}
+                    filterOption={filterOrgUnitOption}
+                    loading={orgUnitTreeQuery.isLoading}
+                    notFoundContent={orgUnitTreeQuery.isLoading ? 'Đang tải...' : 'Chưa có đơn vị. Vào Đơn vị tổ chức để đồng bộ.'}
                     optionFilterProp="label"
                 />
             </Form.Item>
@@ -711,42 +741,91 @@ export const AdminCbcsUser = () => {
             <WrapperHeader>Tài khoản CBCS App</WrapperHeader>
             <BreadcrumbComponent items={breadcrumbItems} />
 
-            <div style={{ display: 'flex', gap: '20px', marginTop: '40px' }}>
-                <FormListHeader>
-                    <Button
-                        type="primary"
-                        style={{ display: 'flex', fontSize: '14px', height: '40px', alignItems: 'center' }}
-                        icon={<PlusOutlined />}
-                        onClick={() => setIsModalOpen(true)}
-                    >
-                        Tạo tài khoản CBCS
-                    </Button>
-                </FormListHeader>
-            </div>
+            <WorkspaceLayout>
+                <SidebarPanel>
+                    <OrgUnitTree
+                        treeData={orgUnitTree}
+                        selectedKey={selectedOrgUnitId}
+                        onSelect={(key, node) => {
+                            setSelectedOrgUnitId(key);
+                            setSelectedOrgUnit(node);
+                            setPagination((prev) => ({ ...prev, currentPage: 1 }));
+                            setSearchKeyword('');
+                            setRoleFilter(null);
+                        }}
+                    />
+                </SidebarPanel>
 
-            <div style={{ marginTop: '20px' }}>
-                <TableComponent
-                    columns={columns}
-                    data={dataTable}
-                    isLoading={isLoadingAllRecords || isLoadingResetFilter}
-                    resetSelection={resetSelection}
-                    pagination={{
-                        current: pagination.currentPage,
-                        pageSize: pagination.pageSize,
-                        total: allRecords?.total,
-                        onChange: handlePageChange,
-                        showSizeChanger: false,
-                    }}
-                    onRow={(record) => ({
-                        onClick: () => {
-                            if (record._id) {
-                                setRowSelected(record._id);
-                                setSelectedRecord(record);
-                            }
-                        },
-                    })}
-                />
-            </div>
+                <MainPanel>
+                    <UnitHeader>
+                        <h2>{selectedOrgUnit?.name || 'Tất cả đơn vị'}</h2>
+                        <p>
+                            Mã đơn vị: {selectedOrgUnit?.code || '—'}
+                            {selectedOrgUnit ? '' : ' · Chọn đơn vị bên trái để lọc tài khoản'}
+                        </p>
+                    </UnitHeader>
+
+                    <Toolbar>
+                        <Input
+                            allowClear
+                            prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                            placeholder="Tìm theo tên tài khoản, họ tên..."
+                            value={searchKeyword}
+                            onChange={(e) => setSearchKeyword(e.target.value)}
+                            className="toolbar-search"
+                        />
+                        <Select
+                            allowClear
+                            placeholder="Vai trò"
+                            value={roleFilter}
+                            onChange={setRoleFilter}
+                            options={ROLE_OPTIONS}
+                            className="toolbar-filter"
+                        />
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={openCreateModal}
+                            style={{ marginLeft: 'auto' }}
+                        >
+                            Thêm mới
+                        </Button>
+                    </Toolbar>
+
+                    <TableWrapper>
+                        <Table
+                            rowKey="key"
+                            columns={columns}
+                            dataSource={displayData}
+                            loading={isLoadingAllRecords || isLoadingResetFilter}
+                            pagination={{
+                                current: pagination.currentPage,
+                                pageSize: pagination.pageSize,
+                                total: allRecords?.total,
+                                onChange: handlePageChange,
+                                showSizeChanger: false,
+                                showTotal: (total) => null,
+                            }}
+                            locale={{ emptyText: 'Không tìm thấy tài khoản phù hợp' }}
+                            onRow={(record) => ({
+                                onClick: () => {
+                                    if (record._id) {
+                                        setRowSelected(record._id);
+                                        setSelectedRecord(record);
+                                    }
+                                },
+                            })}
+                            rowClassName={(record) => (
+                                record._id === rowSelected ? 'ant-table-row-selected' : ''
+                            )}
+                        />
+                    </TableWrapper>
+
+                    <TableFooter>
+                        Tổng số {allRecords?.total ?? displayData.length} mục
+                    </TableFooter>
+                </MainPanel>
+            </WorkspaceLayout>
 
             <ModalComponent
                 form={modalForm}

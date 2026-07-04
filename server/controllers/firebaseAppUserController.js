@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler");
 const firebaseAppUserService = require("../services/firebaseAppUserService");
 
 const listAppUsers = asyncHandler(async (req, res) => {
-    const { page = 1, pageSize, limit, fields, sort } = req.query;
+    const { page = 1, pageSize, limit, fields, sort, orgUnitId } = req.query;
     const size = pageSize || limit || 10;
     let parsedFields = fields;
     if (typeof fields === "string") {
@@ -18,6 +18,7 @@ const listAppUsers = asyncHandler(async (req, res) => {
         pageSize: size,
         fields: parsedFields,
         sort,
+        orgUnitId,
     });
 
     res.status(200).json({

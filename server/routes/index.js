@@ -2,6 +2,7 @@ const userRouter = require("./userRouter");
 const communeRouter = require("./communeRouter");
 const contactRouter = require("./contactRouter");
 const appUserRouter = require("./appUserRouter");
+const orgUnitRouter = require("./orgUnitRouter");
 const { notFound, errHandler } = require("../middlewares/errorHandler");
 
 const initRoutes = (app) => { 
@@ -9,6 +10,7 @@ const initRoutes = (app) => {
     app.use("/api/communes", communeRouter);
     app.use("/api/contacts", contactRouter);
     app.use("/api/app-users", appUserRouter);
+    app.use("/api/org-units", orgUnitRouter);
     app.use(notFound);
     app.use(errHandler);
 }
