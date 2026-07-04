@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { FormListHeader, WrapperHeader } from '../styles/style';
-import { Button, Form, Input, Space, Select, Tag } from "antd";
-import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons'
+import { Button, Form, Input, Space, Select, Tag, Modal } from "antd";
+import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined, ReloadOutlined, GlobalOutlined, LockOutlined } from '@ant-design/icons'
 
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ import BreadcrumbComponent from '../../../../components/BreadcrumbComponent/Brea
 import { ROLE } from '../../../../constants/role';
 import { PATHS } from '../../../../constants/path';
 import {
+    VISIBILITY,
     VISIBILITY_OPTIONS,
     VISIBILITY_LABELS,
     VISIBILITY_COLORS,
@@ -120,6 +121,10 @@ export const AdminCommune = () => {
     
           return response;
         }
+    );
+
+    const mutationBulkVisibility = useMutationHooks(
+        (data) => communeService.bulkUpdateVisibility(data)
     );
 
     const handleCancel = () => {
@@ -318,6 +323,49 @@ export const AdminCommune = () => {
           }
         )
     }
+
+    const handleBulkVisibility = (ids, visibility) => {
+        mutationBulkVisibility.mutate(
+            { ids, visibility, all: false },
+            {
+                onSuccess: (res) => {
+                    if (res?.success) {
+                        message.success(res.message);
+                        setResetSelection((prev) => !prev);
+                        query.refetch();
+                    } else {
+                        message.error(res?.message);
+                    }
+                },
+                onError: (error) => {
+                    message.error(error?.response?.data?.message || 'Cập nhật hiển thị thất bại');
+                },
+            }
+        );
+    };
+
+    const handleBulkVisibilityAll = (visibility) => {
+        const label = VISIBILITY_LABELS[visibility];
+        Modal.confirm({
+            title: `Đặt TẤT CẢ → ${label}`,
+            content: `Chuyển toàn bộ xã/phường/thị trấn sang "${label}"? Thao tác này áp dụng cho mọi bản ghi trong hệ thống.`,
+            okText: 'Cập nhật',
+            cancelText: 'Hủy',
+            onOk: () => mutationBulkVisibility.mutateAsync({ visibility, all: true })
+                .then((res) => {
+                    if (res?.success) {
+                        message.success(res.message);
+                        setResetSelection((prev) => !prev);
+                        query.refetch();
+                    } else {
+                        message.error(res?.message);
+                    }
+                })
+                .catch((error) => {
+                    message.error(error?.response?.data?.message || 'Cập nhật hiển thị thất bại');
+                }),
+        });
+    };
 
     useEffect(() => {
         if (allRecords?.data || allRecords?.items) {
@@ -537,9 +585,30 @@ export const AdminCommune = () => {
                         }}
                     />
                 </FormListHeader>
+                <FormListHeader>
+                    <Button
+                        icon={<GlobalOutlined />}
+                        style={{ height: '40px', borderColor: '#52c41a', color: '#52c41a' }}
+                        onClick={() => handleBulkVisibilityAll(VISIBILITY.PUBLIC)}
+                    >
+                        Tất cả → Công khai
+                    </Button>
+                </FormListHeader>
+                <FormListHeader>
+                    <Button
+                        icon={<LockOutlined />}
+                        style={{ height: '40px', borderColor: '#fa8c16', color: '#fa8c16' }}
+                        onClick={() => handleBulkVisibilityAll(VISIBILITY.INTERNAL)}
+                    >
+                        Tất cả → Nội bộ
+                    </Button>
+                </FormListHeader>
             </div>
             <div style={{ marginTop: '20px' }}>
-                <TableComponent handleDeleteMultiple={handleDeleteMultipleRecords} columns={columns} data={dataTable} isLoading={isLoadingAllRecords || isLoadingResetFilter} resetSelection={resetSelection}
+                <TableComponent
+                    handleDeleteMultiple={handleDeleteMultipleRecords}
+                    handleBulkVisibility={handleBulkVisibility}
+                    columns={columns} data={dataTable} isLoading={isLoadingAllRecords || isLoadingResetFilter} resetSelection={resetSelection}
                     pagination={{
                         current: pagination.currentPage,
                         pageSize: pagination.pageSize,

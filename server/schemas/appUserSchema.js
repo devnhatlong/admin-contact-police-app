@@ -8,6 +8,7 @@
  */
 
 const { normalizePhone, hashPhone } = require("./loginIdentifierSchema");
+const { VISIBILITY_VALUES, DEFAULT_VISIBILITY, normalizeVisibility } = require("../constants/visibility");
 
 const COLLECTION_NAME = "app_users";
 
@@ -156,6 +157,23 @@ const APP_USER_SCHEMA = {
             hasContactProfile: { type: "boolean", default: false },
         },
     },
+    directoryProfile: {
+        type: "object",
+        required: false,
+        fields: {
+            isListed: {
+                type: "boolean",
+                default: true,
+                description: "true: hiển thị trong tab Danh bạ app; false: ẩn khỏi danh bạ",
+            },
+            visibility: {
+                type: "string",
+                enum: ["public", "internal"],
+                default: "internal",
+                description: "public: khách chưa đăng nhập thấy; internal: chỉ CBCS đã đăng nhập",
+            },
+        },
+    },
     metadata: {
         type: "object",
         required: false,
@@ -214,6 +232,16 @@ const validateCreateAppUserInput = (data) => {
         if (!Number.isInteger(maxDevices) || maxDevices < 1) {
             errors.push("maxDevices must be a positive integer");
         }
+    }
+
+    if (data.visibility !== undefined && data.visibility !== null) {
+        if (!VISIBILITY_VALUES.includes(normalizeVisibility(data.visibility))) {
+            errors.push(`visibility must be one of: ${VISIBILITY_VALUES.join(", ")}`);
+        }
+    }
+
+    if (data.isListed !== undefined && typeof data.isListed !== "boolean") {
+        errors.push("isListed must be a boolean");
     }
 
     return {
@@ -290,6 +318,8 @@ const sanitizeCreateAppUserInput = (data) => {
         orgUnitId: data.orgUnitId.trim(),
         roleCode: data.roleCode.trim(),
         maxDevices: data.maxDevices !== undefined ? Number(data.maxDevices) : 2,
+        isListed: data.isListed !== undefined ? Boolean(data.isListed) : true,
+        visibility: normalizeVisibility(data.visibility),
     };
 };
 
@@ -319,6 +349,8 @@ const buildAppUserDocument = ({
         orgUnitId,
         roleCode,
         maxDevices,
+        isListed,
+        visibility,
     } = createInput;
 
     const accountStatus = "pending_activation";
@@ -377,6 +409,10 @@ const buildAppUserDocument = ({
             contactId: null,
             hasContactProfile: false,
         },
+        directoryProfile: {
+            isListed: isListed ?? true,
+            visibility: visibility ?? DEFAULT_VISIBILITY,
+        },
         metadata: {
             createdBy,
             lastLoginAt: null,
@@ -409,6 +445,10 @@ const getDefaultAppUserData = () => ({
     linkedContact: {
         contactId: null,
         hasContactProfile: false,
+    },
+    directoryProfile: {
+        isListed: true,
+        visibility: DEFAULT_VISIBILITY,
     },
 });
 

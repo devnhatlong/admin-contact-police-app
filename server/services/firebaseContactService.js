@@ -125,6 +125,11 @@ const deleteContact = async (id) => {
     return true;
 };
 
+const bulkUpdateVisibility = async (options) => {
+    const { bulkUpdateVisibility: bulkUpdate } = require("../utils/bulkVisibilityUpdate");
+    return bulkUpdate(COLLECTION_NAME, options);
+};
+
 const importContactsFromExcel = async (rows = []) => {
     const db = getFirestoreDb();
     const errors = [];
@@ -178,6 +183,7 @@ module.exports = {
     getContact,
     updateContact,
     deleteContact,
+    bulkUpdateVisibility,
     importContactsFromExcel,
 };
 

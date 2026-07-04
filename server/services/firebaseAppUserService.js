@@ -34,6 +34,8 @@ const mapAppUserDoc = (doc) => {
         roleCode: data.role?.roleCode,
         accountStatus: data.status?.accountStatus,
         emailStatus: data.status?.emailStatus,
+        isListed: data.directoryProfile?.isListed ?? true,
+        visibility: data.directoryProfile?.visibility ?? 'internal',
         createdAt: data.metadata?.createdAt,
         updatedAt: data.metadata?.updatedAt,
     };
@@ -248,6 +250,13 @@ const updateAppUser = async (id, payload) => {
     }
     if (payload.maxDevices !== undefined) {
         updates["security.maxDevices"] = Number(payload.maxDevices);
+    }
+    if (payload.isListed !== undefined) {
+        updates["directoryProfile.isListed"] = Boolean(payload.isListed);
+    }
+    if (payload.visibility !== undefined) {
+        const { normalizeVisibility } = require("../constants/visibility");
+        updates["directoryProfile.visibility"] = normalizeVisibility(payload.visibility);
     }
 
     if (payload.phone !== undefined) {

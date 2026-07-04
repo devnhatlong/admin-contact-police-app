@@ -1,5 +1,7 @@
 import styled from 'styled-components';
 
+export const WORKSPACE_VIEWPORT_HEIGHT = 'calc(100vh - 220px)';
+
 export const WorkspaceLayout = styled.div`
     display: flex;
     gap: 0;
@@ -7,7 +9,21 @@ export const WorkspaceLayout = styled.div`
     border: 1px solid #e8ecf1;
     border-radius: 8px;
     overflow: hidden;
-    height: calc(100vh - 220px);
+    height: ${WORKSPACE_VIEWPORT_HEIGHT};
+    min-height: 600px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(1, 41, 112, 0.06);
+`;
+
+/** Trang admin full-width (không có sidebar), chiều cao kéo sát bottom viewport */
+export const SinglePanelLayout = styled.div`
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+    border: 1px solid #e8ecf1;
+    border-radius: 8px;
+    overflow: hidden;
+    height: ${WORKSPACE_VIEWPORT_HEIGHT};
     min-height: 600px;
     background: #fff;
     box-shadow: 0 1px 4px rgba(1, 41, 112, 0.06);

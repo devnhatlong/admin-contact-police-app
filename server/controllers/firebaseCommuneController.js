@@ -96,6 +96,32 @@ const deleteCommune = asyncHandler(async (req, res) => {
     });
 });
 
+const bulkUpdateVisibility = asyncHandler(async (req, res) => {
+    const { ids, visibility, all = false } = req.body;
+
+    if (!visibility) {
+        return res.status(400).json({
+            success: false,
+            message: "Thiếu trường visibility",
+        });
+    }
+
+    if (!all && (!Array.isArray(ids) || ids.length === 0)) {
+        return res.status(400).json({
+            success: false,
+            message: "Cần chọn ít nhất một bản ghi hoặc dùng all=true",
+        });
+    }
+
+    const { updatedCount } = await firebaseCommuneService.bulkUpdateVisibility({ ids, visibility, all });
+
+    res.status(200).json({
+        success: true,
+        updatedCount,
+        message: `Đã cập nhật hiển thị ${updatedCount} xã/phường/thị trấn`,
+    });
+});
+
 const importFromExcel = asyncHandler(async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ success: false, message: "No file uploaded" });
@@ -122,6 +148,7 @@ module.exports = {
     getCommuneById,
     updateCommune,
     deleteCommune,
+    bulkUpdateVisibility,
     importFromExcel,
 };
 

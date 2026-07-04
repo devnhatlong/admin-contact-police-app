@@ -34,6 +34,14 @@ const contactService = {
         const response = await axiosContact.delete(`${BASE_URL}/${id}`);
         return response.data;
     },
+    bulkUpdateVisibility: async ({ ids, visibility, all = false }) => {
+        const response = await axiosContact.patch(`${BASE_URL}/bulk-visibility`, {
+            ids,
+            visibility,
+            all,
+        });
+        return response.data;
+    },
     importFromExcel: async (formData) => {
         const response = await axiosContact.post(`${BASE_URL}/import-from-excel`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },

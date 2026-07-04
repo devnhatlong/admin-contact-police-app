@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
-import { Button, Form, Space, Select, Tag } from "antd";
-import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined, ReloadOutlined } from "@ant-design/icons";
+import { Button, Form, Space, Select, Tag, Modal } from "antd";
+import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined, ReloadOutlined, GlobalOutlined, LockOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -19,6 +19,7 @@ import { useMutationHooks } from "../../../../hooks/useMutationHook";
 import contactService from "../../../../services/contactService";
 import ImportExcel from "../../../../components/ImportExcel/ImportExcel";
 import {
+    VISIBILITY,
     VISIBILITY_OPTIONS,
     VISIBILITY_LABELS,
     VISIBILITY_COLORS,
@@ -80,6 +81,10 @@ export const AdminContact = () => {
         return contactService.updateContact(id, rest);
     });
     const mutationDelete = useMutationHooks((data) => contactService.deleteContact(data.id));
+
+    const mutationBulkVisibility = useMutationHooks(
+        (data) => contactService.bulkUpdateVisibility(data)
+    );
 
     const { data, isSuccess, isError, isPending } = mutationCreate;
     const { data: dataUpdated, isSuccess: isSuccessUpdated, isError: isErrorUpdated, isPending: isPendingUpdated } = mutationUpdate;
@@ -309,6 +314,49 @@ export const AdminContact = () => {
         query.refetch();
     };
 
+    const handleBulkVisibility = (ids, visibility) => {
+        mutationBulkVisibility.mutate(
+            { ids, visibility, all: false },
+            {
+                onSuccess: (res) => {
+                    if (res?.success) {
+                        message.success(res.message);
+                        setResetSelection((prev) => !prev);
+                        query.refetch();
+                    } else {
+                        message.error(res?.message);
+                    }
+                },
+                onError: (error) => {
+                    message.error(error?.response?.data?.message || "Cập nhật hiển thị thất bại");
+                },
+            }
+        );
+    };
+
+    const handleBulkVisibilityAll = (visibility) => {
+        const label = VISIBILITY_LABELS[visibility];
+        Modal.confirm({
+            title: `Đặt TẤT CẢ → ${label}`,
+            content: `Chuyển toàn bộ liên hệ sang "${label}"? Thao tác này áp dụng cho mọi bản ghi trong hệ thống.`,
+            okText: "Cập nhật",
+            cancelText: "Hủy",
+            onOk: () => mutationBulkVisibility.mutateAsync({ visibility, all: true })
+                .then((res) => {
+                    if (res?.success) {
+                        message.success(res.message);
+                        setResetSelection((prev) => !prev);
+                        query.refetch();
+                    } else {
+                        message.error(res?.message);
+                    }
+                })
+                .catch((error) => {
+                    message.error(error?.response?.data?.message || "Cập nhật hiển thị thất bại");
+                }),
+        });
+    };
+
     const buttonReloadTable = () => (
         <div style={{ display: "flex", justifyContent: "center" }}>
             <ReloadOutlined style={{ color: "#1677ff", fontSize: "18px", cursor: "pointer" }} onClick={handleResetAllFilter} />
@@ -369,10 +417,29 @@ export const AdminContact = () => {
                     </Button>
                 </FormListHeader>
                 <ImportExcel service={contactService.importFromExcel} onSuccess={handleImportSuccess} />
+                <FormListHeader>
+                    <Button
+                        icon={<GlobalOutlined />}
+                        style={{ height: "40px", borderColor: "#52c41a", color: "#52c41a" }}
+                        onClick={() => handleBulkVisibilityAll(VISIBILITY.PUBLIC)}
+                    >
+                        Tất cả → Công khai
+                    </Button>
+                </FormListHeader>
+                <FormListHeader>
+                    <Button
+                        icon={<LockOutlined />}
+                        style={{ height: "40px", borderColor: "#fa8c16", color: "#fa8c16" }}
+                        onClick={() => handleBulkVisibilityAll(VISIBILITY.INTERNAL)}
+                    >
+                        Tất cả → Nội bộ
+                    </Button>
+                </FormListHeader>
             </div>
 
             <div style={{ marginTop: "20px" }}>
                 <TableComponent
+                    handleBulkVisibility={handleBulkVisibility}
                     columns={columns}
                     data={dataTable}
                     isLoading={isLoadingAllRecords || isLoadingResetFilter}

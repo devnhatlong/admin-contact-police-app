@@ -81,6 +81,15 @@ const communeService = {
         }
     },
 
+    bulkUpdateVisibility: async ({ ids, visibility, all = false }) => {
+        const response = await axiosCommune.patch(`${BASE_URL}/bulk-visibility`, {
+            ids,
+            visibility,
+            all,
+        });
+        return response.data;
+    },
+
     importFromExcel: async (formData) => {
         try {
             const response = await axiosCommune.post(`${BASE_URL}/import-from-excel`, formData,

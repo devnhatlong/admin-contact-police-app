@@ -7,6 +7,7 @@ const { upload } = require("../middlewares/multerMiddleware");
 router.post("/", verifyAccessToken, contactCtrls.createContact);
 router.get("/public", contactCtrls.listPublicContacts);
 router.get("/", verifyAccessToken, contactCtrls.listContacts);
+router.patch("/bulk-visibility", verifyAccessToken, contactCtrls.bulkUpdateVisibility);
 router.get("/:id", verifyAccessToken, contactCtrls.getContactById);
 router.put("/:id", verifyAccessToken, contactCtrls.updateContact);
 router.delete("/:id", verifyAccessToken, contactCtrls.deleteContact);

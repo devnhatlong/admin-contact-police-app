@@ -13,6 +13,7 @@ import jobPositionService from '../../../../services/jobPositionService';
 import TablePaginationFooter from '../../../../components/TablePaginationFooter/TablePaginationFooter';
 import { WrapperHeader } from '../styles/style';
 import {
+    SinglePanelLayout,
     MainPanel,
     Toolbar,
     TableWrapper,
@@ -184,15 +185,7 @@ export const AdminJobPosition = () => {
             <WrapperHeader>Danh mục chức vụ</WrapperHeader>
             <BreadcrumbComponent items={breadcrumbItems} />
 
-            <div style={{
-                marginTop: 16,
-                border: '1px solid #e8ecf1',
-                borderRadius: 8,
-                background: '#fff',
-                overflow: 'hidden',
-                boxShadow: '0 1px 4px rgba(1, 41, 112, 0.06)',
-            }}
-            >
+            <SinglePanelLayout>
             <MainPanel>
                 <Toolbar>
                     <Button
@@ -223,7 +216,7 @@ export const AdminJobPosition = () => {
                     onChange={handlePageChange}
                 />
             </MainPanel>
-            </div>
+            </SinglePanelLayout>
 
             <Modal
                 title="Thêm chức vụ"

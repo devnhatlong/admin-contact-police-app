@@ -131,6 +131,11 @@ const deleteCommune = async (id) => {
     return true;
 };
 
+const bulkUpdateVisibility = async (options) => {
+    const { bulkUpdateVisibility: bulkUpdate } = require("../utils/bulkVisibilityUpdate");
+    return bulkUpdate(COLLECTION_NAME, options);
+};
+
 const importCommunesFromExcel = async (rows = []) => {
     const db = getFirestoreDb();
     const errors = [];
@@ -195,6 +200,7 @@ module.exports = {
     getCommune,
     updateCommune,
     deleteCommune,
+    bulkUpdateVisibility,
     importCommunesFromExcel,
 };
 

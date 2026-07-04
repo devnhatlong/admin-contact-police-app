@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { UserOutlined, SnippetsOutlined } from '@ant-design/icons';
-import { Menu, Layout } from 'antd';
+import { UserOutlined, BookOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { Menu, Layout, Card, Row, Col } from 'antd';
 import { useSelector } from 'react-redux';
 
 import '../styles/style.css';
@@ -46,23 +46,39 @@ export const Dashboard = () => {
         fontWeight: "600",
     };
 
-    // Menu items
+    // Menu items — 3 nhóm: Danh bạ, Hệ thống, Dữ liệu nguồn (legacy)
     const items = [
         user?.role === ROLE.ADMIN && {
-            key: 'admin',
-            label: 'Quản trị',
+            key: 'admin-directory',
+            label: 'Danh bạ',
+            icon: <BookOutlined />,
+            style: menuItemStyle,
+            children: [
+                getItem('Đơn vị tổ chức', PATHS.ADMIN.ORG_UNIT, null, null, menuChildrenItemStyle),
+                getItem('Tài khoản CBCS App', PATHS.ADMIN.CBCS_USER, null, null, menuChildrenItemStyle),
+                getItem('Danh mục chức vụ', PATHS.ADMIN.JOB_POSITION, null, null, menuChildrenItemStyle),
+            ],
+        },
+        user?.role === ROLE.ADMIN && {
+            key: 'admin-system',
+            label: 'Hệ thống',
             icon: <UserOutlined />,
             style: menuItemStyle,
             children: [
                 getItem('Tài khoản quản trị web', PATHS.ADMIN.USER, null, null, menuChildrenItemStyle),
-                getItem('Tài khoản CBCS App', PATHS.ADMIN.CBCS_USER, null, null, menuChildrenItemStyle),
-                getItem('Đơn vị tổ chức', PATHS.ADMIN.ORG_UNIT, null, null, menuChildrenItemStyle),
-                getItem('Danh mục chức vụ', PATHS.ADMIN.JOB_POSITION, null, null, menuChildrenItemStyle),
+            ],
+        },
+        user?.role === ROLE.ADMIN && {
+            key: 'admin-legacy',
+            label: 'Dữ liệu nguồn',
+            icon: <DatabaseOutlined />,
+            style: menuItemStyle,
+            children: [
                 getItem('Xã / Phường', PATHS.ADMIN.COMMUNE, null, null, menuChildrenItemStyle),
                 getItem('Liên hệ', PATHS.ADMIN.CONTACT, null, null, menuChildrenItemStyle),
-            ]
+            ],
         },
-    ].filter(Boolean); // Remove null items
+    ].filter(Boolean);
 
     // Handle menu click
     const handleOnClick = ({ key }) => {
@@ -85,12 +101,12 @@ export const Dashboard = () => {
     // Sync openKeys with URL
     useEffect(() => {
         const pathToKeyMap = {
-            [PATHS.ADMIN.USER]: 'admin',
-            [PATHS.ADMIN.CBCS_USER]: 'admin',
-            [PATHS.ADMIN.ORG_UNIT]: 'admin',
-            [PATHS.ADMIN.JOB_POSITION]: 'admin',
-            [PATHS.ADMIN.COMMUNE]: 'admin',
-            [PATHS.ADMIN.CONTACT]: 'admin',
+            [PATHS.ADMIN.ORG_UNIT]: 'admin-directory',
+            [PATHS.ADMIN.CBCS_USER]: 'admin-directory',
+            [PATHS.ADMIN.JOB_POSITION]: 'admin-directory',
+            [PATHS.ADMIN.USER]: 'admin-system',
+            [PATHS.ADMIN.COMMUNE]: 'admin-legacy',
+            [PATHS.ADMIN.CONTACT]: 'admin-legacy',
         };
 
         const currentPath = location.pathname;
@@ -175,8 +191,46 @@ export const Dashboard = () => {
                             element={(
                                 <div style={{ padding: '24px', background: '#fff', minHeight: '280px' }}>
                                     <h1>Quản trị danh bạ CALD</h1>
-                                    <p>Sản phẩm của Đội Công nghệ thông tin - Phòng Tham mưu - Bình Thuận.</p>
-                                    <p>Vui lòng chọn một tùy chọn từ menu để bắt đầu.</p>
+                                    <p style={{ color: '#64748b', marginBottom: 24 }}>
+                                        Sản phẩm của Đội Công nghệ thông tin - Phòng Tham mưu - Bình Thuận.
+                                    </p>
+                                    {user?.role === ROLE.ADMIN && (
+                                        <Row gutter={[16, 16]}>
+                                            <Col xs={24} md={8}>
+                                                <Card
+                                                    title="Danh bạ"
+                                                    size="small"
+                                                    hoverable
+                                                    onClick={() => navigate(PATHS.ADMIN.ORG_UNIT)}
+                                                >
+                                                    <p>Quản lý cây đơn vị, tài khoản CBCS và chức vụ hiển thị trên app.</p>
+                                                </Card>
+                                            </Col>
+                                            <Col xs={24} md={8}>
+                                                <Card
+                                                    title="Hệ thống"
+                                                    size="small"
+                                                    hoverable
+                                                    onClick={() => navigate(PATHS.ADMIN.USER)}
+                                                >
+                                                    <p>Tài khoản quản trị web dùng đăng nhập trang admin này.</p>
+                                                </Card>
+                                            </Col>
+                                            <Col xs={24} md={8}>
+                                                <Card
+                                                    title="Dữ liệu nguồn"
+                                                    size="small"
+                                                    hoverable
+                                                    onClick={() => navigate(PATHS.ADMIN.COMMUNE)}
+                                                >
+                                                    <p>Xã/Phường và Liên hệ — dữ liệu gốc, sẽ được đồng bộ sang Danh bạ.</p>
+                                                </Card>
+                                            </Col>
+                                        </Row>
+                                    )}
+                                    {user?.role !== ROLE.ADMIN && (
+                                        <p>Vui lòng chọn một tùy chọn từ menu để bắt đầu.</p>
+                                    )}
                                 </div>
                             )}
                         />

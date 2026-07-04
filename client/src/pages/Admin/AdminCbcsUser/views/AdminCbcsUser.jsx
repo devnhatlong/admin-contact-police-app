@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { WrapperHeader, WorkspaceLayout, SidebarPanel, MainPanel, UnitHeader, Toolbar, TableWrapper, AccountNameLink, ActionGroup, DEFAULT_TABLE_PAGE_SIZE } from '../styles/style';
 import TablePaginationFooter from '../../../../components/TablePaginationFooter/TablePaginationFooter';
-import { Button, Form, Select, Space, Popover, Tag, InputNumber, Descriptions, Table, Input } from 'antd';
+import { Button, Form, Select, Space, Popover, Tag, InputNumber, Descriptions, Table, Input, Switch } from 'antd';
 import {
     PlusOutlined,
     EditOutlined,
@@ -42,6 +42,12 @@ import {
     ROLE_OPTIONS,
     RANK_OPTIONS,
 } from '../../../../constants/cbcsUser';
+import {
+    VISIBILITY,
+    VISIBILITY_LABELS,
+    VISIBILITY_COLORS,
+    DEFAULT_VISIBILITY,
+} from '../../../../constants/visibility';
 
 const EMPTY_FORM = {
     fullName: '',
@@ -55,6 +61,8 @@ const EMPTY_FORM = {
     orgUnitType: '',
     roleCode: 'cbcs',
     maxDevices: 2,
+    isListed: true,
+    visibility: DEFAULT_VISIBILITY,
 };
 
 const flattenOrgUnits = (nodes = [], acc = []) => {
@@ -191,6 +199,8 @@ export const AdminCbcsUser = () => {
                 orgUnitType: record.organization?.orgUnitType || record.orgUnitType || '',
                 roleCode: record.role?.roleCode || record.roleCode || 'cbcs',
                 maxDevices: record.security?.maxDevices ?? 2,
+                isListed: record.directoryProfile?.isListed ?? record.isListed ?? true,
+                visibility: record.directoryProfile?.visibility || record.visibility || DEFAULT_VISIBILITY,
             });
         }
         setIsLoadingUpdate(false);
@@ -248,6 +258,8 @@ export const AdminCbcsUser = () => {
                     position: item.profile?.position || '',
                     accountStatus: item.status?.accountStatus || item.accountStatus,
                     emailStatus: item.status?.emailStatus || item.emailStatus,
+                    isListed: item.directoryProfile?.isListed ?? item.isListed ?? true,
+                    visibility: item.directoryProfile?.visibility || item.visibility || DEFAULT_VISIBILITY,
                     createdAt: formatTimestamp(item.metadata?.createdAt || item.createdAt),
                 }))
             );
@@ -580,6 +592,29 @@ export const AdminCbcsUser = () => {
             render: (val) => val || '—',
         },
         {
+            title: 'Danh bạ',
+            dataIndex: 'visibility',
+            key: 'visibility',
+            width: 110,
+            render: (value) => (
+                <Tag color={VISIBILITY_COLORS[value] || 'default'}>
+                    {VISIBILITY_LABELS[value] || 'Nội bộ'}
+                </Tag>
+            ),
+        },
+        {
+            title: 'Hiển thị',
+            dataIndex: 'isListed',
+            key: 'isListed',
+            width: 90,
+            align: 'center',
+            render: (value) => (
+                <Tag color={value !== false ? 'blue' : 'default'}>
+                    {value !== false ? 'Hiện' : 'Ẩn'}
+                </Tag>
+            ),
+        },
+        {
             title: 'Trạng thái',
             dataIndex: 'accountStatus',
             key: 'accountStatus',
@@ -752,6 +787,40 @@ export const AdminCbcsUser = () => {
                     style={{ width: '100%' }}
                     value={values.maxDevices}
                     onChange={(value) => onChange('maxDevices', value)}
+                />
+            </Form.Item>
+
+            <Form.Item
+                label="Hiển thị trong Danh bạ app"
+                name="isListed"
+                labelCol={{ span: 24 }}
+                wrapperCol={{ span: 24 }}
+                valuePropName="checked"
+                tooltip="Ẩn: tài khoản vẫn đăng nhập được nhưng không xuất hiện trong tab Danh bạ"
+            >
+                <Switch
+                    checkedChildren="Hiện"
+                    unCheckedChildren="Ẩn"
+                    checked={values.isListed !== false}
+                    onChange={(checked) => onChange('isListed', checked)}
+                />
+            </Form.Item>
+
+            <Form.Item
+                label="Phạm vi hiển thị Danh bạ"
+                name="visibility"
+                labelCol={{ span: 24 }}
+                wrapperCol={{ span: 24 }}
+                tooltip="Công khai: khách chưa đăng nhập thấy; Nội bộ: chỉ CBCS đã đăng nhập"
+            >
+                <Switch
+                    checkedChildren={VISIBILITY_LABELS[VISIBILITY.PUBLIC]}
+                    unCheckedChildren={VISIBILITY_LABELS[VISIBILITY.INTERNAL]}
+                    checked={values.visibility === VISIBILITY.PUBLIC}
+                    onChange={(checked) => onChange(
+                        'visibility',
+                        checked ? VISIBILITY.PUBLIC : VISIBILITY.INTERNAL
+                    )}
                 />
             </Form.Item>
         </>

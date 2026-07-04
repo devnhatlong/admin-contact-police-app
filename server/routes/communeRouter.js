@@ -7,6 +7,7 @@ const { upload } = require("../middlewares/multerMiddleware");
 router.post("/", verifyAccessToken, communeCtrls.createCommune);
 router.get("/public", communeCtrls.listPublicCommunes);
 router.get("/", verifyAccessToken, communeCtrls.listCommunes);
+router.patch("/bulk-visibility", verifyAccessToken, communeCtrls.bulkUpdateVisibility);
 router.get("/:id", verifyAccessToken, communeCtrls.getCommuneById);
 router.put("/:id", verifyAccessToken, communeCtrls.updateCommune);
 router.delete("/:id", verifyAccessToken, communeCtrls.deleteCommune);
