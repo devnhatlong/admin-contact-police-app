@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button, Collapse, Divider, Form, Input, InputNumber, Modal, Select, Switch, Table, Tabs, Tag } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined, DeleteOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -32,7 +32,7 @@ import cbcsUserService from '../../../../services/cbcsUserService';
 import unitPhoneService from '../../../../services/unitPhoneService';
 import jobPositionService from '../../../../services/jobPositionService';
 import TablePaginationFooter from '../../../../components/TablePaginationFooter/TablePaginationFooter';
-import { WrapperHeader } from '../styles/style';
+import { WrapperHeader, PhoneTabScroll } from '../styles/style';
 import {
     WorkspaceLayout,
     SidebarPanel,
@@ -179,6 +179,7 @@ export const AdminOrgUnit = () => {
     const [editingPhone, setEditingPhone] = useState(null);
     const [phoneForm] = Form.useForm();
     const [selectedPhoneKeys, setSelectedPhoneKeys] = useState([]);
+    const [phoneSearch, setPhoneSearch] = useState('');
     const [pagination, setPagination] = useState({
         currentPage: 1,
         pageSize: DEFAULT_TABLE_PAGE_SIZE,
@@ -194,6 +195,7 @@ export const AdminOrgUnit = () => {
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
         setActiveTab('children');
         setSelectedPhoneKeys([]);
+        setPhoneSearch('');
     }, [selectedUnit?._id, selectedUnit?.id]);
 
     const selectedUnitId = selectedUnit?._id || selectedUnit?.id;
@@ -293,9 +295,26 @@ export const AdminOrgUnit = () => {
         }));
     }, [phonesQuery.data]);
 
-    const phoneGroups = useMemo(() => {
+    const filteredPhoneRows = useMemo(() => {
+        const keyword = phoneSearch.trim().toLowerCase();
+        if (!keyword) return phoneRows;
+        return phoneRows.filter((item) => {
+            const label = (item.label || '').toLowerCase();
+            const phone = (item.phone || '').toLowerCase();
+            const positionCode = (item.positionType || '').toLowerCase();
+            const positionName = (positionNameByCode.get(item.positionType) || '').toLowerCase();
+            return (
+                label.includes(keyword)
+                || phone.includes(keyword)
+                || positionCode.includes(keyword)
+                || positionName.includes(keyword)
+            );
+        });
+    }, [phoneRows, phoneSearch, positionNameByCode]);
+
+    const filteredPhoneGroups = useMemo(() => {
         const groups = new Map();
-        phoneRows.forEach((item) => {
+        filteredPhoneRows.forEach((item) => {
             const label = (item.label || 'Chưa gắn nhãn').trim();
             if (!groups.has(label)) {
                 groups.set(label, []);
@@ -306,7 +325,7 @@ export const AdminOrgUnit = () => {
             label,
             rows,
         }));
-    }, [phoneRows]);
+    }, [filteredPhoneRows]);
 
     const createMutation = useMutation({
         mutationFn: (data) => orgUnitService.createOrgUnit(data),
@@ -841,13 +860,20 @@ export const AdminOrgUnit = () => {
                                 Thêm đơn vị con
                             </Button>
                         )}
-                        {activeTab === 'phones' && (
+                        {activeTab === 'phones' && selectedUnit && (
                             <>
+                                <Input
+                                    className="toolbar-search"
+                                    allowClear
+                                    prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                                    placeholder="Tìm theo nhãn, SĐT, mã chức vụ..."
+                                    value={phoneSearch}
+                                    onChange={(e) => setPhoneSearch(e.target.value)}
+                                />
                                 <Button
                                     type="primary"
                                     icon={<PlusOutlined />}
                                     onClick={() => openPhoneModal()}
-                                    disabled={!selectedUnit}
                                     style={{ marginLeft: 'auto' }}
                                 >
                                     Thêm SĐT
@@ -890,7 +916,9 @@ export const AdminOrgUnit = () => {
                             },
                             {
                                 key: 'phones',
-                                label: `Số điện thoại (${phoneRows.length})`,
+                                label: phoneSearch.trim()
+                                    ? `Số điện thoại (${filteredPhoneRows.length}/${phoneRows.length})`
+                                    : `Số điện thoại (${phoneRows.length})`,
                             },
                         ]}
                     />
@@ -934,39 +962,52 @@ export const AdminOrgUnit = () => {
                                     locale={{ emptyText: 'Chọn đơn vị bên trái' }}
                                 />
                             ) : (
-                                phoneGroups.length === 0 && !phonesQuery.isLoading ? (
-                                    <Table
-                                        rowKey="key"
-                                        columns={phoneColumns}
-                                        dataSource={[]}
-                                        loading={false}
-                                        pagination={false}
-                                        locale={{ emptyText: 'Chưa có SĐT. Bấm "Thêm SĐT".' }}
-                                    />
-                                ) : (
-                                    <Collapse
-                                        style={{ background: '#fff' }}
-                                        items={phoneGroups.map((group, index) => ({
-                                            key: `${group.label}-${index}`,
-                                            label: `${group.label} (${group.rows.length})`,
-                                            children: (
-                                                <Table
-                                                    rowKey="key"
-                                                    columns={phoneColumns}
-                                                    dataSource={group.rows}
-                                                    loading={phonesQuery.isLoading}
-                                                    rowSelection={{
-                                                        selectedRowKeys: selectedPhoneKeys,
-                                                        onChange: setSelectedPhoneKeys,
-                                                        preserveSelectedRowKeys: true,
-                                                    }}
-                                                    pagination={false}
-                                                    size="small"
-                                                />
-                                            ),
-                                        }))}
-                                    />
-                                )
+                                <PhoneTabScroll>
+                                    {phoneRows.length === 0 && !phonesQuery.isLoading ? (
+                                        <Table
+                                            rowKey="key"
+                                            columns={phoneColumns}
+                                            dataSource={[]}
+                                            loading={false}
+                                            pagination={false}
+                                            locale={{ emptyText: 'Chưa có SĐT. Bấm "Thêm SĐT".' }}
+                                        />
+                                    ) : filteredPhoneGroups.length === 0 ? (
+                                        <Table
+                                            rowKey="key"
+                                            columns={phoneColumns}
+                                            dataSource={[]}
+                                            loading={phonesQuery.isLoading}
+                                            pagination={false}
+                                            locale={{ emptyText: 'Không tìm thấy SĐT phù hợp' }}
+                                        />
+                                    ) : (
+                                        <Collapse
+                                            style={{ background: '#fff' }}
+                                            defaultActiveKey={filteredPhoneGroups.map((group, index) => `${group.label}-${index}`)}
+                                            items={filteredPhoneGroups.map((group, index) => ({
+                                                key: `${group.label}-${index}`,
+                                                label: `${group.label} (${group.rows.length})`,
+                                                children: (
+                                                    <Table
+                                                        rowKey="key"
+                                                        columns={phoneColumns}
+                                                        dataSource={group.rows}
+                                                        loading={phonesQuery.isLoading}
+                                                        rowSelection={{
+                                                            selectedRowKeys: selectedPhoneKeys,
+                                                            onChange: setSelectedPhoneKeys,
+                                                            preserveSelectedRowKeys: true,
+                                                        }}
+                                                        pagination={false}
+                                                        size="small"
+                                                        scroll={{ x: 720 }}
+                                                    />
+                                                ),
+                                            }))}
+                                        />
+                                    )}
+                                </PhoneTabScroll>
                             )}
                         </>
                         )}
