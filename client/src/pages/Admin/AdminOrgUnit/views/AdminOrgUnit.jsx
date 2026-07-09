@@ -22,6 +22,8 @@ import {
 } from '../../../../constants/orgUnit';
 import {
     VISIBILITY_OPTIONS,
+    VISIBILITY_LABELS,
+    VISIBILITY_COLORS,
     DEFAULT_VISIBILITY,
 } from '../../../../constants/visibility';
 import orgUnitService from '../../../../services/orgUnitService';
