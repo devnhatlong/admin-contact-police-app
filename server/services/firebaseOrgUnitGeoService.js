@@ -59,8 +59,80 @@ const upsertOrgUnitGeo = async (payload) => {
     return mapGeoDoc(created);
 };
 
+const normalizeRowKey = (key) => String(key || "").trim().toLowerCase().replace(/\s+/g, "_");
+
+const trimOrEmpty = (value) => {
+    if (value === undefined || value === null) return "";
+    return String(value).trim();
+};
+
+const GEO_FIELD_KEYS = ["cap", "ma_tinh", "ten_tinh", "dan_so", "dtich_km2", "matdo_km2", "address", "tru_so", "sap_nhap"];
+
+const mapGeoImportRow = (raw = {}) => {
+    const row = { orgUnitCode: "", geoProfile: {} };
+    Object.entries(raw).forEach(([key, value]) => {
+        let nk = normalizeRowKey(key);
+        if (["orgunitcode", "ma_don_vi", "code"].includes(nk)) {
+            row.orgUnitCode = trimOrEmpty(value);
+            return;
+        }
+        if (nk.startsWith("geoprofile.")) {
+            nk = nk.slice("geoprofile.".length);
+        }
+        if (GEO_FIELD_KEYS.includes(nk)) {
+            row.geoProfile[nk] = value;
+        }
+    });
+    return row;
+};
+
+const importOrgUnitGeosFromExcel = async (rows = []) => {
+    const { listAllOrgUnits } = require("./firebaseOrgUnitService");
+    const errors = [];
+    let successCount = 0;
+
+    const existingUnits = await listAllOrgUnits();
+    const codeToId = new Map(existingUnits.map((unit) => [unit.code, unit._id || unit.id]));
+
+    for (let index = 0; index < rows.length; index += 1) {
+        const rowNumber = index + 2;
+        const mapped = mapGeoImportRow(rows[index]);
+        const orgUnitCode = trimOrEmpty(mapped.orgUnitCode);
+
+        if (!orgUnitCode) {
+            errors.push({ row: rowNumber, message: "Thiếu trường: orgUnitCode" });
+            continue;
+        }
+
+        const orgUnitId = codeToId.get(orgUnitCode);
+        if (!orgUnitId) {
+            errors.push({
+                row: rowNumber,
+                message: `Không tìm thấy đơn vị với mã: ${orgUnitCode}`,
+            });
+            continue;
+        }
+
+        try {
+            await upsertOrgUnitGeo({
+                orgUnitId,
+                geoProfile: mapped.geoProfile,
+            });
+            successCount++;
+        } catch (err) {
+            errors.push({
+                row: rowNumber,
+                message: err.message || "Lỗi không xác định",
+            });
+        }
+    }
+
+    return { successCount, errorCount: errors.length, errors };
+};
+
 module.exports = {
     getOrgUnitGeo,
     listOrgUnitGeos,
     upsertOrgUnitGeo,
+    importOrgUnitGeosFromExcel,
 };

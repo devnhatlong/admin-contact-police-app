@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const xlsx = require("xlsx");
 const firebaseUnitPhoneService = require("../services/firebaseUnitPhoneService");
 
 const listUnitPhones = asyncHandler(async (req, res) => {
@@ -57,6 +58,25 @@ const deleteUnitPhone = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, message: "Xóa SĐT đơn vị thành công" });
 });
 
+const importFromExcel = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: "Chưa tải file lên" });
+    }
+
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(sheet);
+
+    const result = await firebaseUnitPhoneService.importUnitPhonesFromExcel(data);
+
+    res.status(200).json({
+        success: true,
+        message: "Import SĐT đơn vị hoàn tất",
+        ...result,
+    });
+});
+
 module.exports = {
     listUnitPhones,
     getUnitPhoneById,
@@ -64,4 +84,5 @@ module.exports = {
     updateUnitPhone,
     setUnitPhoneActive,
     deleteUnitPhone,
+    importFromExcel,
 };

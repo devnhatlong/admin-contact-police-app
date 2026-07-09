@@ -27,6 +27,7 @@ import {
     DEFAULT_VISIBILITY,
 } from '../../../../constants/visibility';
 import orgUnitService from '../../../../services/orgUnitService';
+import orgUnitGeoService from '../../../../services/orgUnitGeoService';
 import cbcsUserService from '../../../../services/cbcsUserService';
 import unitPhoneService from '../../../../services/unitPhoneService';
 import jobPositionService from '../../../../services/jobPositionService';
@@ -674,9 +675,22 @@ export const AdminOrgUnit = () => {
         },
     ];
 
-    const handleImportSuccess = (response) => {
-        message.success(`Import thành công: ${response.successCount} đơn vị`);
+    const handleImportUnitsSuccess = (response) => {
+        message.success(`Import đơn vị thành công: ${response.successCount} bản ghi`);
         treeQuery.refetch();
+    };
+
+    const handleImportGeoSuccess = (response) => {
+        message.success(`Import địa lý thành công: ${response.successCount} bản ghi`);
+        treeQuery.refetch();
+    };
+
+    const handleImportPhonesSuccess = (response) => {
+        message.success(`Import SĐT thành công: ${response.successCount} bản ghi`);
+        treeQuery.refetch();
+        if (selectedUnitId) {
+            phonesQuery.refetch();
+        }
     };
 
     const handleDownloadTemplate = async () => {
@@ -733,32 +747,46 @@ export const AdminOrgUnit = () => {
             <WrapperHeader>Đơn vị tổ chức</WrapperHeader>
             <BreadcrumbComponent items={breadcrumbItems} />
 
-            <div style={{ display: 'flex', gap: 16, marginTop: 16, marginBottom: 8, flexWrap: 'wrap' }}>
-                <Button
-                    icon={<DownloadOutlined />}
-                    onClick={handleDownloadTemplate}
-                    style={{ height: 40 }}
-                >
-                    Mẫu đơn vị
-                </Button>
-                <Button
-                    icon={<DownloadOutlined />}
-                    onClick={handleDownloadGeoTemplate}
-                    style={{ height: 40 }}
-                >
-                    Mẫu địa lý
-                </Button>
-                <Button
-                    icon={<DownloadOutlined />}
-                    onClick={handleDownloadUnitPhoneTemplate}
-                    style={{ height: 40 }}
-                >
-                    Mẫu SĐT đơn vị
-                </Button>
-                <ImportExcel
-                    service={orgUnitService.importFromExcel}
-                    onSuccess={handleImportSuccess}
-                />
+            <div style={{ display: 'flex', gap: 12, marginTop: 16, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate} style={{ height: 40 }}>
+                        Mẫu đơn vị
+                    </Button>
+                    <ImportExcel
+                        service={orgUnitService.importFromExcel}
+                        onSuccess={handleImportUnitsSuccess}
+                        buttonText="Import đơn vị"
+                    />
+                </div>
+
+                <div style={{ width: 1, height: 32, background: '#e5e7eb' }} />
+
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Button icon={<DownloadOutlined />} onClick={handleDownloadGeoTemplate} style={{ height: 40 }}>
+                        Mẫu địa lý
+                    </Button>
+                    <ImportExcel
+                        service={orgUnitGeoService.importFromExcel}
+                        onSuccess={handleImportGeoSuccess}
+                        buttonText="Import địa lý"
+                    />
+                </div>
+
+                <div style={{ width: 1, height: 32, background: '#e5e7eb' }} />
+
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Button icon={<DownloadOutlined />} onClick={handleDownloadUnitPhoneTemplate} style={{ height: 40 }}>
+                        Mẫu SĐT đơn vị
+                    </Button>
+                    <ImportExcel
+                        service={unitPhoneService.importFromExcel}
+                        onSuccess={handleImportPhonesSuccess}
+                        buttonText="Import SĐT"
+                    />
+                </div>
+
+                <div style={{ width: 1, height: 32, background: '#e5e7eb' }} />
+
                 <Button danger onClick={handleDeleteAllOrgUnits} style={{ height: 40 }}>
                     Xóa tất cả đơn vị
                 </Button>

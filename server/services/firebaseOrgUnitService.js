@@ -190,6 +190,11 @@ const buildOrgPath = async (parentId) => {
     return [...(parent.orgPath || []), parentId];
 };
 
+const hasGeoPayload = (payload = {}) => {
+    const profile = sanitizeGeoProfile(payload);
+    return Object.values(profile).some((value) => value !== null && value !== "");
+};
+
 const createOrgUnit = async (payload) => {
     const validation = validateOrgUnit(payload, false);
     if (!validation.isValid) {
@@ -226,10 +231,12 @@ const createOrgUnit = async (payload) => {
         updatedAt: timestamp,
     });
 
-    await geoService.upsertOrgUnitGeo({
-        orgUnitId: docRef.id,
-        geoProfile: sanitizeGeoProfile(payload),
-    });
+    if (hasGeoPayload(payload)) {
+        await geoService.upsertOrgUnitGeo({
+            orgUnitId: docRef.id,
+            geoProfile: sanitizeGeoProfile(payload),
+        });
+    }
 
     const created = await docRef.get();
     return getOrgUnit(created.id);
@@ -261,10 +268,12 @@ const updateOrgUnit = async (id, payload) => {
         updatedAt: timestamp,
     });
 
-    await geoService.upsertOrgUnitGeo({
-        orgUnitId: id,
-        geoProfile: sanitizeGeoProfile(payload),
-    });
+    if (hasGeoPayload(payload)) {
+        await geoService.upsertOrgUnitGeo({
+            orgUnitId: id,
+            geoProfile: sanitizeGeoProfile(payload),
+        });
+    }
 
     const updated = await docRef.get();
     return getOrgUnit(updated.id);
@@ -308,15 +317,6 @@ const importOrgUnitsFromExcel = async (rows = []) => {
             sortOrder: parseOptionalNumber(mapped.sortorder) ?? 0,
             isActive: parseBoolean(mapped.isactive, true),
             visibility: normalizeVisibility(mapped.visibility),
-            cap: parseOptionalNumber(mapped.cap),
-            ma_tinh: trimOrEmpty(mapped.ma_tinh) || null,
-            ten_tinh: trimOrEmpty(mapped.ten_tinh) || null,
-            dan_so: parseOptionalNumber(mapped.dan_so),
-            dtich_km2: parseOptionalNumber(mapped.dtich_km2),
-            matdo_km2: parseOptionalNumber(mapped.matdo_km2),
-            address: trimOrEmpty(mapped.address) || null,
-            tru_so: trimOrEmpty(mapped.tru_so) || null,
-            sap_nhap: trimOrEmpty(mapped.sap_nhap) || null,
         };
     });
 
@@ -400,17 +400,6 @@ const importOrgUnitsFromExcel = async (rows = []) => {
             sortOrder: row.sortOrder,
             isActive: row.isActive,
             visibility: row.visibility,
-            geoProfile: {
-                cap: row.cap,
-                ma_tinh: row.ma_tinh,
-                ten_tinh: row.ten_tinh,
-                dan_so: row.dan_so,
-                dtich_km2: row.dtich_km2,
-                matdo_km2: row.matdo_km2,
-                address: row.address,
-                tru_so: row.tru_so,
-                sap_nhap: row.sap_nhap,
-            },
         };
 
         try {

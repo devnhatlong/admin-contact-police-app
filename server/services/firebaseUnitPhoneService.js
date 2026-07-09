@@ -145,6 +145,105 @@ const deleteUnitPhone = async (id) => {
     return true;
 };
 
+const normalizeRowKey = (key) => String(key || "").trim().toLowerCase().replace(/\s+/g, "_");
+
+const trimOrEmpty = (value) => {
+    if (value === undefined || value === null) return "";
+    return String(value).trim();
+};
+
+const parseOptionalNumber = (value) => {
+    if (value === undefined || value === null || value === "") return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+};
+
+const parseBoolean = (value, defaultValue = true) => {
+    if (value === undefined || value === null || value === "") return defaultValue;
+    const normalized = String(value).trim().toLowerCase();
+    if (["1", "true", "yes", "có", "co", "x", "hiện", "hien"].includes(normalized)) return true;
+    if (["0", "false", "no", "không", "khong", "ẩn", "an"].includes(normalized)) return false;
+    return defaultValue;
+};
+
+const PHONE_ROW_ALIASES = {
+    orgunitcode: ["orgunitcode", "ma_don_vi", "code"],
+    label: ["label", "nhan", "nhãn"],
+    positiontype: ["positiontype", "position_code", "ma_chuc_vu"],
+    phone: ["phone", "so_dien_thoai", "sdt"],
+    sortorder: ["sortorder", "thu_tu", "thứ_tự"],
+    isactive: ["isactive", "hoat_dong", "hoạt_động"],
+};
+
+const mapPhoneImportRow = (raw = {}) => {
+    const normalized = {};
+    Object.entries(raw).forEach(([key, value]) => {
+        const nk = normalizeRowKey(key);
+        for (const [field, aliases] of Object.entries(PHONE_ROW_ALIASES)) {
+            if (aliases.includes(nk) || nk === field) {
+                normalized[field] = value;
+                return;
+            }
+        }
+    });
+    return normalized;
+};
+
+const importUnitPhonesFromExcel = async (rows = []) => {
+    const { listAllOrgUnits } = require("./firebaseOrgUnitService");
+    const errors = [];
+    let successCount = 0;
+
+    const existingUnits = await listAllOrgUnits();
+    const codeToId = new Map(existingUnits.map((unit) => [unit.code, unit._id || unit.id]));
+
+    for (let index = 0; index < rows.length; index += 1) {
+        const rowNumber = index + 2;
+        const mapped = mapPhoneImportRow(rows[index]);
+        const orgUnitCode = trimOrEmpty(mapped.orgunitcode);
+        const phone = trimOrEmpty(mapped.phone);
+
+        if (!orgUnitCode) {
+            errors.push({ row: rowNumber, message: "Thiếu trường: orgUnitCode" });
+            continue;
+        }
+        if (!phone) {
+            errors.push({ row: rowNumber, message: "Thiếu trường: phone" });
+            continue;
+        }
+
+        const orgUnitId = codeToId.get(orgUnitCode);
+        if (!orgUnitId) {
+            errors.push({
+                row: rowNumber,
+                message: `Không tìm thấy đơn vị với mã: ${orgUnitCode}`,
+            });
+            continue;
+        }
+
+        const payload = {
+            orgUnitId,
+            label: trimOrEmpty(mapped.label) || null,
+            positionType: trimOrEmpty(mapped.positiontype) || null,
+            phone,
+            sortOrder: parseOptionalNumber(mapped.sortorder) ?? 0,
+            isActive: parseBoolean(mapped.isactive, true),
+        };
+
+        try {
+            await createUnitPhone(payload);
+            successCount++;
+        } catch (err) {
+            errors.push({
+                row: rowNumber,
+                message: err.message || "Lỗi không xác định",
+            });
+        }
+    }
+
+    return { successCount, errorCount: errors.length, errors };
+};
+
 module.exports = {
     listUnitPhones,
     getUnitPhone,
@@ -152,4 +251,5 @@ module.exports = {
     updateUnitPhone,
     setUnitPhoneActive,
     deleteUnitPhone,
+    importUnitPhonesFromExcel,
 };

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Upload, Button, Progress, Table, message, Modal } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 
-const ImportExcel = ({ service, onSuccess, onError }) => {
+const ImportExcel = ({ service, onSuccess, onError, buttonText = 'Import Excel' }) => {
     const [progress, setProgress] = useState(0);
     const [errors, setErrors] = useState([]);
     const [isImporting, setIsImporting] = useState(false);
@@ -22,7 +22,9 @@ const ImportExcel = ({ service, onSuccess, onError }) => {
             const response = await service(formData);
 
             if (response.success) {
-                message.success(`Import thành công: ${response.successCount} bản ghi`);
+                if (!onSuccess) {
+                    message.success(`Import thành công: ${response.successCount} bản ghi`);
+                }
                 setErrors(response.errors || []);
                 if (onSuccess) onSuccess(response);
             } else {
@@ -84,7 +86,7 @@ const ImportExcel = ({ service, onSuccess, onError }) => {
                         borderColor: "#5eb12b",
                     }}
                 >
-                    Import Excel
+                    {buttonText}
                 </Button>
             </Upload>
 

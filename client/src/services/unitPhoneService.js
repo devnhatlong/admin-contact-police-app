@@ -31,6 +31,13 @@ const unitPhoneService = {
         const response = await axiosUnitPhone.delete(`${BASE_URL}/${id}`);
         return response.data;
     },
+
+    importFromExcel: async (formData) => {
+        const response = await axiosUnitPhone.post(`${BASE_URL}/import-from-excel`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
 };
 
 export default unitPhoneService;
