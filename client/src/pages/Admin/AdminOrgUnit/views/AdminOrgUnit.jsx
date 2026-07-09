@@ -22,8 +22,6 @@ import {
 } from '../../../../constants/orgUnit';
 import {
     VISIBILITY_OPTIONS,
-    VISIBILITY_LABELS,
-    VISIBILITY_COLORS,
     DEFAULT_VISIBILITY,
 } from '../../../../constants/visibility';
 import orgUnitService from '../../../../services/orgUnitService';
@@ -52,8 +50,7 @@ const EMPTY_PHONE_FORM = {
     label: '',
     phone: '',
     sortOrder: 0,
-    visibility: DEFAULT_VISIBILITY,
-    isListed: true,
+    isActive: true,
 };
 
 const EMPTY_GEO_PROFILE = {
@@ -430,8 +427,7 @@ export const AdminOrgUnit = () => {
                 label: record.label || '',
                 phone: record.phone || '',
                 sortOrder: record.sortOrder ?? 0,
-                visibility: record.visibility || DEFAULT_VISIBILITY,
-                isListed: record.isListed !== false,
+                isActive: record.isActive !== false,
             });
         } else {
             phoneForm.setFieldsValue({ ...EMPTY_PHONE_FORM });
@@ -531,24 +527,13 @@ export const AdminOrgUnit = () => {
         { title: 'Nhãn', dataIndex: 'label', key: 'label', width: 140, render: (v) => v || '—' },
         { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone', width: 140 },
         {
-            title: 'Danh bạ',
-            dataIndex: 'visibility',
-            key: 'visibility',
+            title: 'Trạng thái',
+            dataIndex: 'isActive',
+            key: 'isActive',
             width: 110,
             render: (value) => (
-                <Tag color={VISIBILITY_COLORS[value] || 'default'}>
-                    {VISIBILITY_LABELS[value] || 'Nội bộ'}
-                </Tag>
-            ),
-        },
-        {
-            title: 'Hiển thị',
-            dataIndex: 'isListed',
-            key: 'isListed',
-            width: 90,
-            render: (value) => (
-                <Tag color={value !== false ? 'blue' : 'default'}>
-                    {value !== false ? 'Hiện' : 'Ẩn'}
+                <Tag color={value === false ? 'red' : 'green'}>
+                    {value === false ? 'Ẩn' : 'Hiện'}
                 </Tag>
             ),
         },
@@ -882,10 +867,7 @@ export const AdminOrgUnit = () => {
                     <Form.Item label="Thứ tự" name="sortOrder">
                         <InputNumber min={0} style={{ width: '100%' }} />
                     </Form.Item>
-                    <Form.Item label="Phạm vi Danh bạ" name="visibility">
-                        <Select options={VISIBILITY_OPTIONS} />
-                    </Form.Item>
-                    <Form.Item label="Hiển thị trong Danh bạ" name="isListed" valuePropName="checked">
+                    <Form.Item label="Hiển thị" name="isActive" valuePropName="checked">
                         <Switch checkedChildren="Hiện" unCheckedChildren="Ẩn" />
                     </Form.Item>
                 </Form>

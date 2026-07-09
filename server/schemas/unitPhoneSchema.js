@@ -3,8 +3,6 @@
  * Collection: unit_phones
  */
 
-const { VISIBILITY_VALUES, DEFAULT_VISIBILITY, normalizeVisibility } = require("../constants/visibility");
-
 const COLLECTION_NAME = "unit_phones";
 
 const UNIT_PHONE_SCHEMA = {
@@ -12,9 +10,7 @@ const UNIT_PHONE_SCHEMA = {
     label: { type: "string", required: false, nullable: true, description: "Nhãn: Tổng đài, Trực ban..." },
     phone: { type: "string", required: true },
     sortOrder: { type: "number", default: 0 },
-    isListed: { type: "boolean", default: true, description: "Hiện/ẩn trong Danh bạ app" },
-    visibility: { type: "string", enum: VISIBILITY_VALUES, default: DEFAULT_VISIBILITY },
-    isActive: { type: "boolean", default: true },
+    isActive: { type: "boolean", default: true, description: "Hiện/ẩn số điện thoại" },
 };
 
 const trimOrNull = (value) => {
@@ -39,12 +35,6 @@ const validateUnitPhone = (data, isUpdate = false) => {
         errors.push("phone must be a non-empty string");
     }
 
-    if (data.visibility !== undefined && data.visibility !== null) {
-        if (!VISIBILITY_VALUES.includes(normalizeVisibility(data.visibility))) {
-            errors.push(`visibility must be one of: ${VISIBILITY_VALUES.join(", ")}`);
-        }
-    }
-
     return errors;
 };
 
@@ -53,8 +43,6 @@ const sanitizeUnitPhoneInput = (data) => ({
     label: trimOrNull(data.label),
     phone: data.phone?.trim(),
     sortOrder: data.sortOrder !== undefined ? Number(data.sortOrder) : 0,
-    isListed: data.isListed !== undefined ? Boolean(data.isListed) : true,
-    visibility: normalizeVisibility(data.visibility),
     isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
 });
 

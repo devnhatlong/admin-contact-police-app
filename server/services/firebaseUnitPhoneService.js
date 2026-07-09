@@ -6,7 +6,6 @@ const {
     sanitizeUnitPhoneInput,
 } = require("../schemas/unitPhoneSchema");
 const { getOrgUnit } = require("./firebaseOrgUnitService");
-const { matchesVisibilityScope } = require("../constants/visibility");
 
 const mapUnitPhoneDoc = (doc) => {
     if (!doc || !doc.exists) return null;
@@ -26,7 +25,7 @@ const sortItems = (items) => (
     })
 );
 
-const listUnitPhones = async ({ orgUnitId, includeInactive = true, visibilityScope = "all" } = {}) => {
+const listUnitPhones = async ({ orgUnitId, includeInactive = true } = {}) => {
     const db = getFirestoreDb();
     let query = db.collection(COLLECTION_NAME);
 
@@ -38,10 +37,8 @@ const listUnitPhones = async ({ orgUnitId, includeInactive = true, visibilitySco
     let items = snapshot.docs.map(mapUnitPhoneDoc);
 
     if (!includeInactive) {
-        items = items.filter((item) => item.isActive !== false && item.isListed !== false);
+        items = items.filter((item) => item.isActive !== false);
     }
-
-    items = items.filter((item) => matchesVisibilityScope(item, visibilityScope));
 
     return sortItems(items);
 };
@@ -100,8 +97,6 @@ const updateUnitPhone = async (id, payload) => {
         label: data.label,
         phone: data.phone,
         sortOrder: data.sortOrder,
-        isListed: data.isListed,
-        visibility: data.visibility,
         isActive: data.isActive,
         updatedAt: timestamp,
     });

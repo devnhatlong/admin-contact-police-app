@@ -105,8 +105,6 @@ export const UNIT_PHONE_IMPORT_COLUMNS = [
     { key: 'label', header: 'label', width: 16, description: 'Nhãn số điện thoại' },
     { key: 'phone', header: 'phone', width: 18, required: true, description: 'Số điện thoại đơn vị' },
     { key: 'sortOrder', header: 'sortOrder', width: 10, description: 'Thứ tự hiển thị' },
-    { key: 'visibility', header: 'visibility', width: 12, description: 'public hoặc internal' },
-    { key: 'isListed', header: 'isListed', width: 10, description: '1 = hiện, 0 = ẩn' },
     { key: 'isActive', header: 'isActive', width: 10, description: '1 = dùng, 0 = khóa' },
 ];
 
@@ -152,8 +150,6 @@ const UNIT_PHONE_ROWS = [
         label: 'Trực ban',
         phone: '02963888888',
         sortOrder: 1,
-        visibility: 'internal',
-        isListed: 1,
         isActive: 1,
     },
 ];
