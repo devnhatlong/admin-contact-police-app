@@ -102,7 +102,7 @@ export const ORG_UNIT_GEO_IMPORT_COLUMNS = [
 
 export const UNIT_PHONE_IMPORT_COLUMNS = [
     { key: 'orgUnitCode', header: 'orgUnitCode', width: 14, required: true, description: 'Mã đơn vị' },
-    { key: 'label', header: 'label', width: 16, description: 'Nhãn số điện thoại' },
+    { key: 'displayName', header: 'displayName', width: 20, description: 'Tên hiển thị trên danh bạ (VD: Trực ban, tên thủ trưởng)' },
     { key: 'positionType', header: 'positionType', width: 18, description: 'Mã chức vụ (code) trong Danh mục chức vụ, VD: truong_phong' },
     { key: 'phone', header: 'phone', width: 18, required: true, description: 'Số điện thoại đơn vị' },
     { key: 'sortOrder', header: 'sortOrder', width: 10, description: 'Thứ tự hiển thị' },
@@ -148,7 +148,7 @@ const ORG_UNIT_GEO_ROWS = [
 const UNIT_PHONE_ROWS = [
     {
         orgUnitCode: 'PA05',
-        label: 'Trực ban',
+        displayName: 'Trực ban Công an tỉnh',
         positionType: 'truong_phong',
         phone: '02963888888',
         sortOrder: 1,

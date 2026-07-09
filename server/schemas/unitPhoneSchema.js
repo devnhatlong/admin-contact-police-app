@@ -9,7 +9,7 @@ const { normalizeCode } = require("./jobPositionSchema");
 
 const UNIT_PHONE_SCHEMA = {
     orgUnitId: { type: "string", required: true, ref: "org_units._id" },
-    label: { type: "string", required: false, nullable: true, description: "Nhãn: Tổng đài, Trực ban..." },
+    displayName: { type: "string", required: false, nullable: true, description: "Tên hiển thị trên danh bạ (VD: Trực ban, tên thủ trưởng...)" },
     positionType: { type: "string", required: false, nullable: true, description: "Mã chức vụ (code) trong job_positions, ví dụ: truong_phong" },
     phone: { type: "string", required: true },
     sortOrder: { type: "number", default: 0 },
@@ -43,7 +43,7 @@ const validateUnitPhone = (data, isUpdate = false) => {
 
 const sanitizeUnitPhoneInput = (data) => ({
     orgUnitId: data.orgUnitId?.trim(),
-    label: trimOrNull(data.label),
+    displayName: trimOrNull(data.displayName ?? data.label),
     positionType: data.positionType !== undefined && data.positionType !== null && String(data.positionType).trim()
         ? normalizeCode(data.positionType)
         : null,

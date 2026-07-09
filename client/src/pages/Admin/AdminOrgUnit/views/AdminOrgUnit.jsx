@@ -51,7 +51,7 @@ import {
 } from '../../../../utils/orgUnitExcelTemplate';
 
 const EMPTY_PHONE_FORM = {
-    label: '',
+    displayName: '',
     positionType: '',
     phone: '',
     sortOrder: 0,
@@ -299,12 +299,12 @@ export const AdminOrgUnit = () => {
         const keyword = phoneSearch.trim().toLowerCase();
         if (!keyword) return phoneRows;
         return phoneRows.filter((item) => {
-            const label = (item.label || '').toLowerCase();
+            const displayName = (item.displayName || item.label || '').toLowerCase();
             const phone = (item.phone || '').toLowerCase();
             const positionCode = (item.positionType || '').toLowerCase();
             const positionName = (positionNameByCode.get(item.positionType) || '').toLowerCase();
             return (
-                label.includes(keyword)
+                displayName.includes(keyword)
                 || phone.includes(keyword)
                 || positionCode.includes(keyword)
                 || positionName.includes(keyword)
@@ -315,14 +315,14 @@ export const AdminOrgUnit = () => {
     const filteredPhoneGroups = useMemo(() => {
         const groups = new Map();
         filteredPhoneRows.forEach((item) => {
-            const label = (item.label || 'Chưa gắn nhãn').trim();
-            if (!groups.has(label)) {
-                groups.set(label, []);
+            const groupName = (item.displayName || item.label || 'Chưa có tên hiển thị').trim();
+            if (!groups.has(groupName)) {
+                groups.set(groupName, []);
             }
-            groups.get(label).push(item);
+            groups.get(groupName).push(item);
         });
-        return Array.from(groups.entries()).map(([label, rows]) => ({
-            label,
+        return Array.from(groups.entries()).map(([groupName, rows]) => ({
+            groupName,
             rows,
         }));
     }, [filteredPhoneRows]);
@@ -491,7 +491,7 @@ export const AdminOrgUnit = () => {
         setEditingPhone(record);
         if (record) {
             phoneForm.setFieldsValue({
-                label: record.label || '',
+                displayName: record.displayName || record.label || '',
                 positionType: record.positionType || '',
                 phone: record.phone || '',
                 sortOrder: record.sortOrder ?? 0,
@@ -640,7 +640,13 @@ export const AdminOrgUnit = () => {
     ];
 
     const phoneColumns = [
-        { title: 'Nhãn', dataIndex: 'label', key: 'label', width: 140, render: (v) => v || '—' },
+        {
+            title: 'Tên hiển thị',
+            dataIndex: 'displayName',
+            key: 'displayName',
+            width: 180,
+            render: (_, record) => record.displayName || record.label || '—',
+        },
         {
             title: 'Mã chức vụ',
             dataIndex: 'positionType',
@@ -866,7 +872,7 @@ export const AdminOrgUnit = () => {
                                     className="toolbar-search"
                                     allowClear
                                     prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
-                                    placeholder="Tìm theo nhãn, SĐT, mã chức vụ..."
+                                    placeholder="Tìm theo tên hiển thị, SĐT, mã chức vụ..."
                                     value={phoneSearch}
                                     onChange={(e) => setPhoneSearch(e.target.value)}
                                 />
@@ -984,10 +990,10 @@ export const AdminOrgUnit = () => {
                                     ) : (
                                         <Collapse
                                             style={{ background: '#fff' }}
-                                            defaultActiveKey={filteredPhoneGroups.map((group, index) => `${group.label}-${index}`)}
+                                            defaultActiveKey={filteredPhoneGroups.map((group, index) => `${group.groupName}-${index}`)}
                                             items={filteredPhoneGroups.map((group, index) => ({
-                                                key: `${group.label}-${index}`,
-                                                label: `${group.label} (${group.rows.length})`,
+                                                key: `${group.groupName}-${index}`,
+                                                label: `${group.groupName} (${group.rows.length})`,
                                                 children: (
                                                     <Table
                                                         rowKey="key"
@@ -1088,8 +1094,8 @@ export const AdminOrgUnit = () => {
                 width={480}
             >
                 <Form form={phoneForm} layout="vertical" onFinish={handlePhoneSubmit}>
-                    <Form.Item label="Nhãn" name="label">
-                        <Input placeholder="VD: Tổng đài, Trực ban" />
+                    <Form.Item label="Tên hiển thị" name="displayName">
+                        <Input placeholder="VD: Trực ban, Nguyễn Văn A" />
                     </Form.Item>
                     <Form.Item label="Mã chức vụ" name="positionType">
                         <Select

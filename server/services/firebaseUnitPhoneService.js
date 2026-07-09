@@ -11,11 +11,13 @@ const { normalizeCode } = require("../schemas/jobPositionSchema");
 
 const mapUnitPhoneDoc = (doc) => {
     if (!doc || !doc.exists) return null;
+    const data = doc.data();
     return {
         id: doc.id,
         _id: doc.id,
         key: doc.id,
-        ...doc.data(),
+        ...data,
+        displayName: data.displayName ?? data.label ?? null,
     };
 };
 
@@ -109,7 +111,7 @@ const updateUnitPhone = async (id, payload) => {
     await ensureJobPositionExists(data.positionType);
 
     await docRef.update({
-        label: data.label,
+        displayName: data.displayName,
         positionType: data.positionType,
         phone: data.phone,
         sortOrder: data.sortOrder,
@@ -168,7 +170,7 @@ const parseBoolean = (value, defaultValue = true) => {
 
 const PHONE_ROW_ALIASES = {
     orgunitcode: ["orgunitcode", "ma_don_vi", "code"],
-    label: ["label", "nhan", "nhãn"],
+    displayname: ["displayname", "display_name", "ten_hien_thi", "label", "nhan", "nhãn"],
     positiontype: ["positiontype", "position_code", "ma_chuc_vu"],
     phone: ["phone", "so_dien_thoai", "sdt"],
     sortorder: ["sortorder", "thu_tu", "thứ_tự"],
@@ -223,7 +225,7 @@ const importUnitPhonesFromExcel = async (rows = []) => {
 
         const payload = {
             orgUnitId,
-            label: trimOrEmpty(mapped.label) || null,
+            displayName: trimOrEmpty(mapped.displayname) || null,
             positionType: trimOrEmpty(mapped.positiontype) || null,
             phone,
             sortOrder: parseOptionalNumber(mapped.sortorder) ?? 0,
