@@ -103,7 +103,7 @@ export const ORG_UNIT_GEO_IMPORT_COLUMNS = [
 export const UNIT_PHONE_IMPORT_COLUMNS = [
     { key: 'orgUnitCode', header: 'orgUnitCode', width: 14, required: true, description: 'Mã đơn vị' },
     { key: 'label', header: 'label', width: 16, description: 'Nhãn số điện thoại' },
-    { key: 'positionType', header: 'positionType', width: 18, description: 'Kiểu chức vụ (EN), ví dụ: head_of_unit' },
+    { key: 'positionType', header: 'positionType', width: 18, description: 'Map theo tên trong Danh mục chức vụ (cho phép tiếng Việt)' },
     { key: 'phone', header: 'phone', width: 18, required: true, description: 'Số điện thoại đơn vị' },
     { key: 'sortOrder', header: 'sortOrder', width: 10, description: 'Thứ tự hiển thị' },
     { key: 'isActive', header: 'isActive', width: 10, description: '1 = dùng, 0 = khóa' },
@@ -149,7 +149,7 @@ const UNIT_PHONE_ROWS = [
     {
         orgUnitCode: 'PA05',
         label: 'Trực ban',
-        positionType: 'duty_officer',
+        positionType: 'Trưởng phòng',
         phone: '02963888888',
         sortOrder: 1,
         isActive: 1,

@@ -10,5 +10,8 @@ router.put("/:id/status", [verifyAccessToken, isAdmin], ctrls.updateAccountStatu
 router.put("/:id/recovery-email", [verifyAccessToken, isAdmin], ctrls.updateRecoveryEmail);
 router.post("/:id/send-activation-email", [verifyAccessToken, isAdmin], ctrls.sendActivationEmail);
 router.post("/:id/resend-verification-email", [verifyAccessToken, isAdmin], ctrls.resendVerificationEmail);
+router.delete("/all", [verifyAccessToken, isAdmin], ctrls.deleteAllAppUsers);
+router.post("/bulk-delete", [verifyAccessToken, isAdmin], ctrls.bulkDeleteAppUsers);
+router.delete("/:id", [verifyAccessToken, isAdmin], ctrls.deleteAppUser);
 
 module.exports = router;

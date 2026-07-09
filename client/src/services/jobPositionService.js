@@ -36,6 +36,16 @@ const jobPositionService = {
         const response = await axiosJobPosition.delete(`${BASE_URL}/${id}`);
         return response.data;
     },
+
+    bulkDeleteJobPositions: async (ids) => {
+        const response = await axiosJobPosition.post(`${BASE_URL}/bulk-delete`, { ids });
+        return response.data;
+    },
+
+    deleteAllJobPositions: async () => {
+        const response = await axiosJobPosition.delete(`${BASE_URL}/all`);
+        return response.data;
+    },
 };
 
 export default jobPositionService;

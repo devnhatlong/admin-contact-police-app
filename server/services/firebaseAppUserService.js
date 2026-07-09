@@ -393,6 +393,46 @@ const sendActivationEmail = async (id) => {
 
 const resendVerificationEmail = async (id) => sendActivationEmail(id);
 
+const deleteAppUser = async (id) => {
+    const db = getFirestoreDb();
+    const docRef = db.collection(COLLECTION_NAME).doc(id);
+    const snapshot = await docRef.get();
+    if (!snapshot.exists) return false;
+
+    const current = snapshot.data();
+    const phoneNormalized = current?.auth?.loginPhoneNormalized;
+
+    const userPhonesSnapshot = await db.collection("app_user_phones").where("appUserId", "==", id).get();
+    const batch = db.batch();
+    batch.delete(docRef);
+    userPhonesSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
+    if (phoneNormalized) {
+        const loginRef = db.collection(LOGIN_COLLECTION).doc(getLoginIdentifierDocId(phoneNormalized, true));
+        batch.delete(loginRef);
+    }
+    await batch.commit();
+    return true;
+};
+
+const deleteManyAppUsers = async (ids = []) => {
+    let deletedCount = 0;
+    for (const id of ids) {
+        const deleted = await deleteAppUser(id);
+        if (deleted) deletedCount++;
+    }
+    return { deletedCount };
+};
+
+const deleteAllAppUsers = async () => {
+    const db = getFirestoreDb();
+    const usersSnapshot = await db.collection(COLLECTION_NAME).get();
+    const ids = usersSnapshot.docs.map((doc) => doc.id);
+    const result = await deleteManyAppUsers(ids);
+    return {
+        deletedCount: result.deletedCount,
+    };
+};
+
 module.exports = {
     listAppUsers,
     getAppUser,
@@ -402,4 +442,7 @@ module.exports = {
     updateRecoveryEmail,
     sendActivationEmail,
     resendVerificationEmail,
+    deleteAppUser,
+    deleteManyAppUsers,
+    deleteAllAppUsers,
 };

@@ -46,6 +46,21 @@ const cbcsUserService = {
         const response = await axiosCbcsUser.put(`${BASE_URL}/${id}/recovery-email`, data);
         return response.data;
     },
+
+    deleteAppUser: async (id) => {
+        const response = await axiosCbcsUser.delete(`${BASE_URL}/${id}`);
+        return response.data;
+    },
+
+    bulkDeleteAppUsers: async (ids) => {
+        const response = await axiosCbcsUser.post(`${BASE_URL}/bulk-delete`, { ids });
+        return response.data;
+    },
+
+    deleteAllAppUsers: async () => {
+        const response = await axiosCbcsUser.delete(`${BASE_URL}/all`);
+        return response.data;
+    },
 };
 
 export default cbcsUserService;

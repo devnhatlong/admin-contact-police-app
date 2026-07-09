@@ -54,6 +54,28 @@ const deleteJobPosition = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, data: item, message: "Xóa chức vụ thành công" });
 });
 
+const bulkDeleteJobPositions = asyncHandler(async (req, res) => {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+    if (!ids.length) {
+        return res.status(400).json({ success: false, message: "Danh sách ids không hợp lệ" });
+    }
+    const result = await firebaseJobPositionService.deleteManyJobPositions(ids);
+    res.status(200).json({
+        success: true,
+        ...result,
+        message: `Đã xóa ${result.deletedCount} chức vụ`,
+    });
+});
+
+const deleteAllJobPositions = asyncHandler(async (_req, res) => {
+    const result = await firebaseJobPositionService.deleteAllJobPositions();
+    res.status(200).json({
+        success: true,
+        ...result,
+        message: `Đã xóa ${result.deletedCount} chức vụ`,
+    });
+});
+
 module.exports = {
     listJobPositions,
     getJobPositionById,
@@ -61,4 +83,6 @@ module.exports = {
     updateJobPosition,
     setJobPositionActive,
     deleteJobPosition,
+    bulkDeleteJobPositions,
+    deleteAllJobPositions,
 };

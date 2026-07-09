@@ -142,6 +142,45 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
     });
 });
 
+const deleteAppUser = asyncHandler(async (req, res) => {
+    const deleted = await firebaseAppUserService.deleteAppUser(req.params.id);
+    if (!deleted) {
+        return res.status(404).json({
+            success: false,
+            message: "Không tìm thấy tài khoản CBCS",
+        });
+    }
+    res.status(200).json({
+        success: true,
+        message: "Xóa tài khoản CBCS thành công",
+    });
+});
+
+const bulkDeleteAppUsers = asyncHandler(async (req, res) => {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+    if (!ids.length) {
+        return res.status(400).json({
+            success: false,
+            message: "Danh sách ids không hợp lệ",
+        });
+    }
+    const result = await firebaseAppUserService.deleteManyAppUsers(ids);
+    res.status(200).json({
+        success: true,
+        ...result,
+        message: `Đã xóa ${result.deletedCount} tài khoản CBCS`,
+    });
+});
+
+const deleteAllAppUsers = asyncHandler(async (_req, res) => {
+    const result = await firebaseAppUserService.deleteAllAppUsers();
+    res.status(200).json({
+        success: true,
+        ...result,
+        message: `Đã xóa ${result.deletedCount} tài khoản CBCS`,
+    });
+});
+
 module.exports = {
     listAppUsers,
     getAppUserById,
@@ -151,4 +190,7 @@ module.exports = {
     updateRecoveryEmail,
     sendActivationEmail,
     resendVerificationEmail,
+    deleteAppUser,
+    bulkDeleteAppUsers,
+    deleteAllAppUsers,
 };

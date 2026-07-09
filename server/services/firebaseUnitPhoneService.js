@@ -17,6 +17,18 @@ const mapUnitPhoneDoc = (doc) => {
     };
 };
 
+const ensureJobPositionExists = async (positionType) => {
+    const normalized = String(positionType || "").trim();
+    if (!normalized) return;
+    const db = getFirestoreDb();
+    const snapshot = await db.collection("job_positions").where("name", "==", normalized).limit(1).get();
+    if (snapshot.empty) {
+        const err = new Error(`Không tìm thấy chức vụ: ${normalized}`);
+        err.statusCode = 400;
+        throw err;
+    }
+};
+
 const sortItems = (items) => (
     [...items].sort((a, b) => {
         const orderDiff = (a.sortOrder || 0) - (b.sortOrder || 0);
@@ -64,6 +76,7 @@ const createUnitPhone = async (payload) => {
         err.statusCode = 404;
         throw err;
     }
+    await ensureJobPositionExists(data.positionType);
 
     const db = getFirestoreDb();
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
@@ -92,6 +105,7 @@ const updateUnitPhone = async (id, payload) => {
 
     const data = sanitizeUnitPhoneInput({ ...snapshot.data(), ...payload });
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
+    await ensureJobPositionExists(data.positionType);
 
     await docRef.update({
         label: data.label,

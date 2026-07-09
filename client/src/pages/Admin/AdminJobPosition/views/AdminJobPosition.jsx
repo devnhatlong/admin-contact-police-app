@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button, Form, Input, InputNumber, Modal, Table, Tag } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
 import { useSelector } from 'react-redux';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -35,6 +35,7 @@ export const AdminJobPosition = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const [pagination, setPagination] = useState({
         currentPage: 1,
         pageSize: DEFAULT_TABLE_PAGE_SIZE,
@@ -106,6 +107,20 @@ export const AdminJobPosition = () => {
         onError: () => message.error('Không thể thay đổi trạng thái chức vụ'),
     });
 
+    const deleteMutation = useMutation({
+        mutationFn: (id) => jobPositionService.deleteJobPosition(id),
+        onSuccess: (res) => {
+            if (res?.success) {
+                message.success(res.message || 'Xóa chức vụ thành công');
+                setSelectedRowKeys((prev) => prev.filter((key) => key !== res?.data?._id && key !== res?.data?.id));
+                listQuery.refetch();
+            } else {
+                message.error(res?.message || 'Không thể xóa chức vụ');
+            }
+        },
+        onError: (error) => message.error(error?.response?.data?.message || 'Không thể xóa chức vụ'),
+    });
+
     const breadcrumbItems = [
         { label: 'Trang chủ', path: `${PATHS.ROOT}` },
         { label: 'Quản trị' },
@@ -128,6 +143,50 @@ export const AdminJobPosition = () => {
 
     const handlePageChange = (page, pageSize) => {
         setPagination({ currentPage: page, pageSize });
+    };
+
+    const handleDeleteMany = async () => {
+        if (!selectedRowKeys.length) {
+            message.error('Vui lòng chọn chức vụ cần xóa');
+            return;
+        }
+        Modal.confirm({
+            title: 'Xóa các chức vụ đã chọn?',
+            content: `Bạn sắp xóa ${selectedRowKeys.length} chức vụ`,
+            okText: 'Xóa',
+            okButtonProps: { danger: true },
+            cancelText: 'Hủy',
+            onOk: async () => {
+                try {
+                    const res = await jobPositionService.bulkDeleteJobPositions(selectedRowKeys);
+                    message.success(res?.message || 'Đã xóa các chức vụ đã chọn');
+                    setSelectedRowKeys([]);
+                    listQuery.refetch();
+                } catch (error) {
+                    message.error(error?.response?.data?.message || 'Không thể xóa các chức vụ đã chọn');
+                }
+            },
+        });
+    };
+
+    const handleDeleteAll = () => {
+        Modal.confirm({
+            title: 'Xóa tất cả chức vụ?',
+            content: 'Thao tác này không thể hoàn tác.',
+            okText: 'Xóa tất cả',
+            okButtonProps: { danger: true },
+            cancelText: 'Hủy',
+            onOk: async () => {
+                try {
+                    const res = await jobPositionService.deleteAllJobPositions();
+                    message.success(res?.message || 'Đã xóa tất cả chức vụ');
+                    setSelectedRowKeys([]);
+                    listQuery.refetch();
+                } catch (error) {
+                    message.error(error?.response?.data?.message || 'Không thể xóa tất cả chức vụ');
+                }
+            },
+        });
     };
 
     const columns = [
@@ -175,6 +234,21 @@ export const AdminJobPosition = () => {
                     >
                         {record.isActive === false ? 'Kích hoạt' : 'Ẩn'}
                     </Button>
+                    <Button
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => Modal.confirm({
+                            title: `Xóa chức vụ "${record.name}"?`,
+                            okText: 'Xóa',
+                            okButtonProps: { danger: true },
+                            cancelText: 'Hủy',
+                            onOk: () => deleteMutation.mutate(record._id || record.id),
+                        })}
+                        style={{ marginLeft: 8 }}
+                    >
+                        Xóa
+                    </Button>
                 </>
             ),
         },
@@ -196,6 +270,16 @@ export const AdminJobPosition = () => {
                     >
                         Thêm chức vụ
                     </Button>
+                    <Button
+                        danger
+                        disabled={!selectedRowKeys.length}
+                        onClick={handleDeleteMany}
+                    >
+                        Xóa đã chọn ({selectedRowKeys.length})
+                    </Button>
+                    <Button danger onClick={handleDeleteAll}>
+                        Xóa tất cả
+                    </Button>
                 </Toolbar>
 
                 <TableWrapper>
@@ -204,6 +288,10 @@ export const AdminJobPosition = () => {
                         columns={columns}
                         dataSource={pagedRows}
                         loading={listQuery.isLoading}
+                        rowSelection={{
+                            selectedRowKeys,
+                            onChange: setSelectedRowKeys,
+                        }}
                         pagination={false}
                         locale={{ emptyText: 'Chưa có chức vụ. Bấm "Thêm chức vụ" để tạo mới.' }}
                     />

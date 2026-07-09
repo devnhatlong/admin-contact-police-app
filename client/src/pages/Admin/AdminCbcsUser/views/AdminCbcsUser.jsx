@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { WrapperHeader, WorkspaceLayout, SidebarPanel, MainPanel, UnitHeader, Toolbar, TableWrapper, AccountNameLink, ActionGroup, DEFAULT_TABLE_PAGE_SIZE } from '../styles/style';
 import TablePaginationFooter from '../../../../components/TablePaginationFooter/TablePaginationFooter';
-import { Button, Form, Select, Space, Popover, Tag, InputNumber, Descriptions, Table, Input, Switch } from 'antd';
+import { Button, Form, Select, Space, Popover, Tag, InputNumber, Descriptions, Table, Input, Switch, Modal } from 'antd';
 import {
     PlusOutlined,
     EditOutlined,
@@ -11,6 +11,7 @@ import {
     MailOutlined,
     LockOutlined,
     UnlockOutlined,
+    DeleteOutlined,
 } from '@ant-design/icons';
 import Moment from 'react-moment';
 import { useNavigate } from 'react-router';
@@ -101,6 +102,7 @@ export const AdminCbcsUser = () => {
     const [selectedRecord, setSelectedRecord] = useState(null);
     const [searchKeyword, setSearchKeyword] = useState('');
     const [roleFilter, setRoleFilter] = useState(null);
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
     const user = useSelector((state) => state?.user);
     const navigate = useNavigate();
@@ -422,6 +424,83 @@ export const AdminCbcsUser = () => {
         });
     };
 
+    const confirmDeleteSingle = (id) => {
+        if (!id) return;
+        Modal.confirm({
+            title: 'Xóa tài khoản CBCS?',
+            content: 'Thao tác này sẽ xóa tài khoản và dữ liệu đăng nhập liên quan.',
+            okText: 'Xóa',
+            okButtonProps: { danger: true },
+            cancelText: 'Hủy',
+            onOk: async () => {
+                try {
+                    const res = await cbcsUserService.deleteAppUser(id);
+                    if (res?.success) {
+                        message.success(res.message || 'Xóa tài khoản thành công');
+                        setSelectedRowKeys((prev) => prev.filter((key) => key !== id));
+                        if (rowSelected === id) {
+                            setRowSelected(undefined);
+                            setSelectedRecord(null);
+                        }
+                        refetch();
+                    } else {
+                        message.error(res?.message || 'Không thể xóa tài khoản');
+                    }
+                } catch (error) {
+                    message.error(error?.response?.data?.message || 'Không thể xóa tài khoản');
+                }
+            },
+        });
+    };
+
+    const handleDeleteSelected = () => {
+        if (!selectedRowKeys.length) {
+            message.error('Vui lòng chọn tài khoản cần xóa');
+            return;
+        }
+        Modal.confirm({
+            title: 'Xóa các tài khoản đã chọn?',
+            content: `Bạn sắp xóa ${selectedRowKeys.length} tài khoản CBCS`,
+            okText: 'Xóa',
+            okButtonProps: { danger: true },
+            cancelText: 'Hủy',
+            onOk: async () => {
+                try {
+                    const res = await cbcsUserService.bulkDeleteAppUsers(selectedRowKeys);
+                    message.success(res?.message || 'Đã xóa các tài khoản đã chọn');
+                    setSelectedRowKeys([]);
+                    setRowSelected(undefined);
+                    setSelectedRecord(null);
+                    refetch();
+                } catch (error) {
+                    message.error(error?.response?.data?.message || 'Không thể xóa các tài khoản đã chọn');
+                }
+            },
+        });
+    };
+
+    const handleDeleteAll = () => {
+        Modal.confirm({
+            title: 'Xóa tất cả tài khoản CBCS?',
+            content: 'Thao tác này sẽ xóa toàn bộ tài khoản CBCS và dữ liệu đăng nhập liên quan.',
+            okText: 'Xóa tất cả',
+            okButtonProps: { danger: true },
+            cancelText: 'Hủy',
+            onOk: async () => {
+                try {
+                    const res = await cbcsUserService.deleteAllAppUsers();
+                    message.success(res?.message || 'Đã xóa tất cả tài khoản CBCS');
+                    setSelectedRowKeys([]);
+                    setRowSelected(undefined);
+                    setSelectedRecord(null);
+                    refetch();
+                } catch (error) {
+                    message.error(error?.response?.data?.message || 'Không thể xóa tất cả tài khoản');
+                }
+            },
+        });
+    };
+
     const handleResetAllFilter = () => {
         setColumnFilters({});
         setFilters({});
@@ -520,6 +599,9 @@ export const AdminCbcsUser = () => {
             </WrapperContentPopup>
             <WrapperContentPopup onClick={() => setIsRecoveryEmailOpen(true)}>
                 <MailOutlined /> Đổi email khôi phục
+            </WrapperContentPopup>
+            <WrapperContentPopup onClick={() => confirmDeleteSingle(rowSelected)}>
+                <DeleteOutlined /> Xóa tài khoản
             </WrapperContentPopup>
         </div>
     );
@@ -881,6 +963,12 @@ export const AdminCbcsUser = () => {
                         >
                             Thêm mới
                         </Button>
+                        <Button danger disabled={!selectedRowKeys.length} onClick={handleDeleteSelected}>
+                            Xóa đã chọn ({selectedRowKeys.length})
+                        </Button>
+                        <Button danger onClick={handleDeleteAll}>
+                            Xóa tất cả
+                        </Button>
                     </Toolbar>
 
                     <TableWrapper>
@@ -889,6 +977,10 @@ export const AdminCbcsUser = () => {
                             columns={columns}
                             dataSource={displayData}
                             loading={isLoadingAllRecords || isLoadingResetFilter}
+                            rowSelection={{
+                                selectedRowKeys,
+                                onChange: setSelectedRowKeys,
+                            }}
                             pagination={false}
                             locale={{ emptyText: 'Không tìm thấy tài khoản phù hợp' }}
                             onRow={(record) => ({

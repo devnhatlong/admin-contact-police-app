@@ -29,6 +29,7 @@ import {
 import orgUnitService from '../../../../services/orgUnitService';
 import cbcsUserService from '../../../../services/cbcsUserService';
 import unitPhoneService from '../../../../services/unitPhoneService';
+import jobPositionService from '../../../../services/jobPositionService';
 import TablePaginationFooter from '../../../../components/TablePaginationFooter/TablePaginationFooter';
 import { WrapperHeader } from '../styles/style';
 import {
@@ -176,6 +177,7 @@ export const AdminOrgUnit = () => {
     const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
     const [editingPhone, setEditingPhone] = useState(null);
     const [phoneForm] = Form.useForm();
+    const [selectedPhoneKeys, setSelectedPhoneKeys] = useState([]);
     const [pagination, setPagination] = useState({
         currentPage: 1,
         pageSize: DEFAULT_TABLE_PAGE_SIZE,
@@ -190,6 +192,7 @@ export const AdminOrgUnit = () => {
     useEffect(() => {
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
         setActiveTab('children');
+        setSelectedPhoneKeys([]);
     }, [selectedUnit?._id, selectedUnit?.id]);
 
     const selectedUnitId = selectedUnit?._id || selectedUnit?.id;
@@ -242,6 +245,20 @@ export const AdminOrgUnit = () => {
         queryFn: () => unitPhoneService.getUnitPhones(selectedUnitId, true),
         enabled: Boolean(selectedUnitId),
     });
+
+    const jobPositionQuery = useQuery({
+        queryKey: ['job-positions-org-unit-phone'],
+        queryFn: () => jobPositionService.getJobPositions(false),
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const positionOptions = useMemo(
+        () => (jobPositionQuery.data?.items || []).map((item) => ({
+            value: item.name,
+            label: item.name,
+        })),
+        [jobPositionQuery.data]
+    );
 
     const accountRows = useMemo(() => {
         const records = accountsQuery.data?.data || accountsQuery.data?.items || [];
@@ -466,6 +483,54 @@ export const AdminOrgUnit = () => {
                 orgUnitId: selectedUnitId,
             });
         }
+    };
+
+    const handleDeleteSelectedPhones = () => {
+        if (!selectedPhoneKeys.length) {
+            message.error('Vui lòng chọn SĐT cần xóa');
+            return;
+        }
+        Modal.confirm({
+            title: 'Xóa các SĐT đã chọn?',
+            content: `Bạn sắp xóa ${selectedPhoneKeys.length} SĐT`,
+            okText: 'Xóa',
+            okButtonProps: { danger: true },
+            cancelText: 'Hủy',
+            onOk: async () => {
+                try {
+                    await Promise.all(selectedPhoneKeys.map((id) => unitPhoneService.deleteUnitPhone(id)));
+                    message.success(`Đã xóa ${selectedPhoneKeys.length} SĐT`);
+                    setSelectedPhoneKeys([]);
+                    phonesQuery.refetch();
+                } catch {
+                    message.error('Không thể xóa các SĐT đã chọn');
+                }
+            },
+        });
+    };
+
+    const handleDeleteAllPhones = () => {
+        if (!phoneRows.length) {
+            message.error('Đơn vị chưa có SĐT để xóa');
+            return;
+        }
+        Modal.confirm({
+            title: 'Xóa tất cả SĐT của đơn vị?',
+            content: `Bạn sắp xóa ${phoneRows.length} SĐT`,
+            okText: 'Xóa tất cả',
+            okButtonProps: { danger: true },
+            cancelText: 'Hủy',
+            onOk: async () => {
+                try {
+                    await Promise.all(phoneRows.map((item) => unitPhoneService.deleteUnitPhone(item._id || item.id)));
+                    message.success(`Đã xóa ${phoneRows.length} SĐT`);
+                    setSelectedPhoneKeys([]);
+                    phonesQuery.refetch();
+                } catch {
+                    message.error('Không thể xóa tất cả SĐT');
+                }
+            },
+        });
     };
 
     const childColumns = [
@@ -727,15 +792,31 @@ export const AdminOrgUnit = () => {
                             </Button>
                         )}
                         {activeTab === 'phones' && (
-                            <Button
-                                type="primary"
-                                icon={<PlusOutlined />}
-                                onClick={() => openPhoneModal()}
-                                disabled={!selectedUnit}
-                                style={{ marginLeft: 'auto' }}
-                            >
-                                Thêm SĐT
-                            </Button>
+                            <>
+                                <Button
+                                    type="primary"
+                                    icon={<PlusOutlined />}
+                                    onClick={() => openPhoneModal()}
+                                    disabled={!selectedUnit}
+                                    style={{ marginLeft: 'auto' }}
+                                >
+                                    Thêm SĐT
+                                </Button>
+                                <Button
+                                    danger
+                                    disabled={!selectedUnit || !selectedPhoneKeys.length}
+                                    onClick={handleDeleteSelectedPhones}
+                                >
+                                    Xóa đã chọn ({selectedPhoneKeys.length})
+                                </Button>
+                                <Button
+                                    danger
+                                    disabled={!selectedUnit || !phoneRows.length}
+                                    onClick={handleDeleteAllPhones}
+                                >
+                                    Xóa tất cả SĐT
+                                </Button>
+                            </>
                         )}
                         {activeTab === 'accounts' && (
                             <Link to={PATHS.ADMIN.CBCS_USER} style={{ marginLeft: 'auto' }}>
@@ -824,6 +905,11 @@ export const AdminOrgUnit = () => {
                                                     columns={phoneColumns}
                                                     dataSource={group.rows}
                                                     loading={phonesQuery.isLoading}
+                                                    rowSelection={{
+                                                        selectedRowKeys: selectedPhoneKeys,
+                                                        onChange: setSelectedPhoneKeys,
+                                                        preserveSelectedRowKeys: true,
+                                                    }}
                                                     pagination={false}
                                                     size="small"
                                                 />
@@ -914,8 +1000,16 @@ export const AdminOrgUnit = () => {
                     <Form.Item label="Nhãn" name="label">
                         <Input placeholder="VD: Tổng đài, Trực ban" />
                     </Form.Item>
-                    <Form.Item label="Kiểu chức vụ (EN)" name="positionType">
-                        <Input placeholder="VD: head_of_unit, duty_officer" />
+                    <Form.Item label="Kiểu chức vụ" name="positionType">
+                        <Select
+                            showSearch
+                            allowClear
+                            placeholder="Chọn từ Danh mục chức vụ"
+                            options={positionOptions}
+                            loading={jobPositionQuery.isLoading}
+                            optionFilterProp="label"
+                            notFoundContent={jobPositionQuery.isLoading ? 'Đang tải...' : 'Chưa có chức vụ'}
+                        />
                     </Form.Item>
                     <Form.Item label="Số điện thoại" name="phone" rules={[{ required: true, message: 'Nhập SĐT' }]}>
                         <Input placeholder="02633888888" />

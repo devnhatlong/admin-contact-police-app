@@ -139,6 +139,33 @@ const deleteJobPosition = async (id) => {
     return existing;
 };
 
+const deleteManyJobPositions = async (ids = []) => {
+    const db = getFirestoreDb();
+    const uniqueIds = [...new Set(ids.filter(Boolean))];
+    if (!uniqueIds.length) return { deletedCount: 0 };
+    const batch = db.batch();
+    let deletedCount = 0;
+    for (const id of uniqueIds) {
+        const ref = db.collection(COLLECTION_NAME).doc(id);
+        const snap = await ref.get();
+        if (snap.exists) {
+            batch.delete(ref);
+            deletedCount++;
+        }
+    }
+    if (deletedCount > 0) {
+        await batch.commit();
+    }
+    return { deletedCount };
+};
+
+const deleteAllJobPositions = async () => {
+    const db = getFirestoreDb();
+    const snapshot = await db.collection(COLLECTION_NAME).get();
+    const ids = snapshot.docs.map((doc) => doc.id);
+    return deleteManyJobPositions(ids);
+};
+
 module.exports = {
     listJobPositions,
     getJobPosition,
@@ -146,4 +173,6 @@ module.exports = {
     updateJobPosition,
     setJobPositionActive,
     deleteJobPosition,
+    deleteManyJobPositions,
+    deleteAllJobPositions,
 };
