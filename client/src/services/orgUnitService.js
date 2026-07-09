@@ -50,6 +50,11 @@ const orgUnitService = {
         const response = await axiosOrgUnit.delete(`${BASE_URL}/all`);
         return response.data;
     },
+
+    deleteOrgUnit: async (id) => {
+        const response = await axiosOrgUnit.delete(`${BASE_URL}/${id}`);
+        return response.data;
+    },
 };
 
 export default orgUnitService;

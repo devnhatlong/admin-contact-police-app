@@ -76,6 +76,18 @@ const importFromExcel = asyncHandler(async (req, res) => {
     });
 });
 
+const deleteOrgUnit = asyncHandler(async (req, res) => {
+    const result = await firebaseOrgUnitService.deleteOrgUnit(req.params.id);
+    if (!result) {
+        return res.status(404).json({ success: false, message: "Không tìm thấy đơn vị" });
+    }
+    res.status(200).json({
+        success: true,
+        ...result,
+        message: "Đã xóa đơn vị và dữ liệu liên quan",
+    });
+});
+
 const deleteAllOrgUnits = asyncHandler(async (_req, res) => {
     const result = await firebaseOrgUnitService.deleteAllOrgUnits();
     res.status(200).json({
@@ -93,5 +105,6 @@ module.exports = {
     updateOrgUnit,
     setOrgUnitActive,
     importFromExcel,
+    deleteOrgUnit,
     deleteAllOrgUnits,
 };

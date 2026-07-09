@@ -7,6 +7,7 @@ router.get("/tree", [verifyAccessToken, isAdmin], ctrls.getOrgUnitTree);
 router.get("/", [verifyAccessToken, isAdmin], ctrls.listOrgUnits);
 router.post("/import-from-excel", [verifyAccessToken, isAdmin, upload.single("file")], ctrls.importFromExcel);
 router.delete("/all", [verifyAccessToken, isAdmin], ctrls.deleteAllOrgUnits);
+router.delete("/:id", [verifyAccessToken, isAdmin], ctrls.deleteOrgUnit);
 router.get("/:id", [verifyAccessToken, isAdmin], ctrls.getOrgUnitById);
 router.post("/", [verifyAccessToken, isAdmin], ctrls.createOrgUnit);
 router.put("/:id", [verifyAccessToken, isAdmin], ctrls.updateOrgUnit);

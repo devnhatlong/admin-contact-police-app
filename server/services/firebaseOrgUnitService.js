@@ -409,6 +409,62 @@ const importOrgUnitsFromExcel = async (rows = []) => {
     return { successCount, errorCount: errors.length, errors };
 };
 
+const deleteRefsInBatches = async (db, refs = []) => {
+    if (!refs.length) return 0;
+    for (let i = 0; i < refs.length; i += 400) {
+        const batch = db.batch();
+        refs.slice(i, i + 400).forEach((ref) => batch.delete(ref));
+        await batch.commit();
+    }
+    return refs.length;
+};
+
+const collectUnitsToDelete = (allUnits, rootId) => allUnits.filter((unit) => {
+    const unitId = unit._id || unit.id;
+    if (unitId === rootId) return true;
+    return Array.isArray(unit.orgPath) && unit.orgPath.includes(rootId);
+});
+
+const deleteOrgUnit = async (id) => {
+    const db = getFirestoreDb();
+    const unit = await getOrgUnit(id);
+    if (!unit) return null;
+
+    const allUnits = await listAllOrgUnits();
+    const unitsToDelete = collectUnitsToDelete(allUnits, id);
+    const unitIdSet = new Set(unitsToDelete.map((item) => item._id || item.id));
+
+    const { deleteManyAppUsers } = require("./firebaseAppUserService");
+    const usersSnapshot = await db.collection("app_users").get();
+    const userIds = usersSnapshot.docs
+        .filter((doc) => isUnderOrgUnit({ organization: doc.data().organization }, id))
+        .map((doc) => doc.id);
+    const userResult = await deleteManyAppUsers(userIds);
+
+    const geosSnapshot = await db.collection("org_unit_geos").get();
+    const geoRefs = geosSnapshot.docs
+        .filter((doc) => unitIdSet.has(doc.data().orgUnitId))
+        .map((doc) => doc.ref);
+
+    const phonesSnapshot = await db.collection("unit_phones").get();
+    const phoneRefs = phonesSnapshot.docs
+        .filter((doc) => unitIdSet.has(doc.data().orgUnitId))
+        .map((doc) => doc.ref);
+
+    const unitRefs = unitsToDelete.map((item) => db.collection(COLLECTION_NAME).doc(item._id || item.id));
+
+    const deletedUnitPhones = await deleteRefsInBatches(db, phoneRefs);
+    const deletedOrgUnitGeos = await deleteRefsInBatches(db, geoRefs);
+    const deletedOrgUnits = await deleteRefsInBatches(db, unitRefs);
+
+    return {
+        deletedOrgUnits,
+        deletedOrgUnitGeos,
+        deletedUnitPhones,
+        deletedAppUsers: userResult.deletedCount,
+    };
+};
+
 const deleteAllOrgUnits = async () => {
     const db = getFirestoreDb();
     const collections = [
@@ -459,5 +515,6 @@ module.exports = {
     setOrgUnitActive,
     isUnderOrgUnit,
     importOrgUnitsFromExcel,
+    deleteOrgUnit,
     deleteAllOrgUnits,
 };

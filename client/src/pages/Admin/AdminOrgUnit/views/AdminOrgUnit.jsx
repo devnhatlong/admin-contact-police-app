@@ -179,6 +179,7 @@ export const AdminOrgUnit = () => {
     const [editingPhone, setEditingPhone] = useState(null);
     const [phoneForm] = Form.useForm();
     const [selectedPhoneKeys, setSelectedPhoneKeys] = useState([]);
+    const [selectedChildKeys, setSelectedChildKeys] = useState([]);
     const [phoneSearch, setPhoneSearch] = useState('');
     const [pagination, setPagination] = useState({
         currentPage: 1,
@@ -195,6 +196,7 @@ export const AdminOrgUnit = () => {
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
         setActiveTab('children');
         setSelectedPhoneKeys([]);
+        setSelectedChildKeys([]);
         setPhoneSearch('');
     }, [selectedUnit?._id, selectedUnit?.id]);
 
@@ -368,6 +370,26 @@ export const AdminOrgUnit = () => {
                 treeQuery.refetch();
             }
         },
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: (id) => orgUnitService.deleteOrgUnit(id),
+        onSuccess: (res, deletedId) => {
+            if (res?.success) {
+                message.success(
+                    res.message
+                    || `Đã xóa ${res.deletedOrgUnits || 0} đơn vị, ${res.deletedAppUsers || 0} tài khoản CBCS`
+                );
+                if ((selectedUnit?._id || selectedUnit?.id) === deletedId) {
+                    setSelectedUnit(null);
+                }
+                setSelectedChildKeys((prev) => prev.filter((key) => key !== deletedId));
+                treeQuery.refetch();
+            } else {
+                message.error(res?.message);
+            }
+        },
+        onError: (error) => message.error(error?.response?.data?.message || 'Không thể xóa đơn vị'),
     });
 
     const phoneCreateMutation = useMutation({
@@ -566,6 +588,74 @@ export const AdminOrgUnit = () => {
         });
     };
 
+    const handleDeleteOrgUnit = (unit) => {
+        if (!unit) return;
+        const unitId = unit._id || unit.id;
+        const isSelectedUnit = (selectedUnit?._id || selectedUnit?.id) === unitId;
+        const childCount = isSelectedUnit ? childrenRows.length : 0;
+        const accountCount = isSelectedUnit ? accountRows.length : 0;
+        const phoneCount = isSelectedUnit ? phoneRows.length : 0;
+
+        Modal.confirm({
+            title: `Xóa đơn vị "${unit.name}"?`,
+            content: (
+                <>
+                    <p>Thao tác này sẽ xóa đơn vị này cùng toàn bộ đơn vị con, địa lý, SĐT và tài khoản CBCS liên quan.</p>
+                    {childCount > 0 && <p>Đơn vị con trực tiếp: {childCount}</p>}
+                    {accountCount > 0 && <p>Tài khoản CBCS: {accountCount}</p>}
+                    {phoneCount > 0 && <p>Số điện thoại: {phoneCount}</p>}
+                    <p>Không thể hoàn tác.</p>
+                </>
+            ),
+            okText: 'Xóa',
+            okButtonProps: { danger: true },
+            cancelText: 'Hủy',
+            onOk: () => deleteMutation.mutateAsync(unitId),
+        });
+    };
+
+    const handleDeleteSelectedChildren = () => {
+        if (!selectedChildKeys.length) {
+            message.error('Vui lòng chọn đơn vị cần xóa');
+            return;
+        }
+        Modal.confirm({
+            title: 'Xóa các đơn vị đã chọn?',
+            content: `Bạn sắp xóa ${selectedChildKeys.length} đơn vị cùng toàn bộ đơn vị con, SĐT và tài khoản CBCS liên quan. Không thể hoàn tác.`,
+            okText: 'Xóa',
+            okButtonProps: { danger: true },
+            cancelText: 'Hủy',
+            onOk: async () => {
+                try {
+                    let successCount = 0;
+                    let totalUnits = 0;
+                    let totalUsers = 0;
+                    for (const id of selectedChildKeys) {
+                        try {
+                            const res = await orgUnitService.deleteOrgUnit(id);
+                            if (res?.success) {
+                                successCount += 1;
+                                totalUnits += res.deletedOrgUnits || 0;
+                                totalUsers += res.deletedAppUsers || 0;
+                            }
+                        } catch (error) {
+                            if (error?.response?.status !== 404) {
+                                throw error;
+                            }
+                        }
+                    }
+                    message.success(
+                        `Đã xóa ${successCount} đơn vị (${totalUnits} bản ghi tổ chức, ${totalUsers} tài khoản CBCS)`
+                    );
+                    setSelectedChildKeys([]);
+                    treeQuery.refetch();
+                } catch {
+                    message.error('Không thể xóa các đơn vị đã chọn');
+                }
+            },
+        });
+    };
+
     const childColumns = [
         {
             title: 'STT',
@@ -611,18 +701,28 @@ export const AdminOrgUnit = () => {
         {
             title: 'Thao tác',
             key: 'action',
-            width: 100,
+            width: 160,
             render: (_, record) => (
-                <Button
-                    size="small"
-                    icon={record.isActive === false ? <CheckOutlined /> : <StopOutlined />}
-                    onClick={() => activeMutation.mutate({
-                        id: record._id || record.id,
-                        isActive: record.isActive === false,
-                    })}
-                >
-                    {record.isActive === false ? 'Kích hoạt' : 'Ẩn'}
-                </Button>
+                <>
+                    <Button
+                        size="small"
+                        icon={record.isActive === false ? <CheckOutlined /> : <StopOutlined />}
+                        onClick={() => activeMutation.mutate({
+                            id: record._id || record.id,
+                            isActive: record.isActive === false,
+                        })}
+                        style={{ marginRight: 8 }}
+                    >
+                        {record.isActive === false ? 'Kích hoạt' : 'Ẩn'}
+                    </Button>
+                    <Button
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        loading={deleteMutation.isPending}
+                        onClick={() => handleDeleteOrgUnit(record)}
+                    />
+                </>
             ),
         },
     ];
@@ -856,16 +956,34 @@ export const AdminOrgUnit = () => {
                         >
                             Sửa đơn vị
                         </Button>
+                        <Button
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() => handleDeleteOrgUnit(selectedUnit)}
+                            disabled={!selectedUnit}
+                            loading={deleteMutation.isPending}
+                        >
+                            Xóa đơn vị
+                        </Button>
                         {activeTab === 'children' && (
-                            <Button
-                                type="primary"
-                                icon={<PlusOutlined />}
-                                onClick={openCreateChild}
-                                disabled={!selectedUnit || childTypeOptions.length === 0}
-                                style={{ marginLeft: 'auto' }}
-                            >
-                                Thêm đơn vị con
-                            </Button>
+                            <>
+                                <Button
+                                    danger
+                                    disabled={!selectedUnit || !selectedChildKeys.length}
+                                    onClick={handleDeleteSelectedChildren}
+                                    style={{ marginLeft: 'auto' }}
+                                >
+                                    Xóa đã chọn ({selectedChildKeys.length})
+                                </Button>
+                                <Button
+                                    type="primary"
+                                    icon={<PlusOutlined />}
+                                    onClick={openCreateChild}
+                                    disabled={!selectedUnit || childTypeOptions.length === 0}
+                                >
+                                    Thêm đơn vị con
+                                </Button>
+                            </>
                         )}
                         {activeTab === 'phones' && selectedUnit && (
                             <>
@@ -959,6 +1077,11 @@ export const AdminOrgUnit = () => {
                             dataSource={selectedUnit ? pagedChildrenRows : []}
                             pagination={false}
                             expandable={{ indentSize: 16 }}
+                            rowSelection={{
+                                selectedRowKeys: selectedChildKeys,
+                                onChange: setSelectedChildKeys,
+                                preserveSelectedRowKeys: true,
+                            }}
                             locale={{
                                 emptyText: selectedUnit
                                     ? 'Chưa có đơn vị con. Bấm "Thêm đơn vị con".'
