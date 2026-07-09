@@ -32,7 +32,7 @@ import cbcsUserService from '../../../../services/cbcsUserService';
 import unitPhoneService from '../../../../services/unitPhoneService';
 import jobPositionService from '../../../../services/jobPositionService';
 import TablePaginationFooter from '../../../../components/TablePaginationFooter/TablePaginationFooter';
-import { WrapperHeader, PhoneTabScroll } from '../styles/style';
+import { WrapperHeader, PhoneTabScroll, CountBadge, TabLabel, GroupLabel } from '../styles/style';
 import {
     WorkspaceLayout,
     SidebarPanel,
@@ -250,9 +250,9 @@ export const AdminOrgUnit = () => {
     });
 
     const jobPositionQuery = useQuery({
-        queryKey: ['job-positions-org-unit-phone'],
+        queryKey: ['job-positions'],
         queryFn: () => jobPositionService.getJobPositions(false),
-        staleTime: 5 * 60 * 1000,
+        staleTime: 0,
     });
 
     const positionOptions = useMemo(
@@ -488,6 +488,7 @@ export const AdminOrgUnit = () => {
     };
 
     const openPhoneModal = (record = null) => {
+        jobPositionQuery.refetch();
         setEditingPhone(record);
         if (record) {
             phoneForm.setFieldsValue({
@@ -914,17 +915,38 @@ export const AdminOrgUnit = () => {
                         items={[
                             {
                                 key: 'children',
-                                label: `Đơn vị con (${childrenRows.length})`,
+                                label: (
+                                    <TabLabel>
+                                        Đơn vị con
+                                        <CountBadge>{childrenRows.length}</CountBadge>
+                                    </TabLabel>
+                                ),
                             },
                             {
                                 key: 'accounts',
-                                label: `Tài khoản (${accountRows.length})`,
+                                label: (
+                                    <TabLabel>
+                                        Tài khoản
+                                        <CountBadge>{accountRows.length}</CountBadge>
+                                    </TabLabel>
+                                ),
                             },
                             {
                                 key: 'phones',
-                                label: phoneSearch.trim()
-                                    ? `Số điện thoại (${filteredPhoneRows.length}/${phoneRows.length})`
-                                    : `Số điện thoại (${phoneRows.length})`,
+                                label: (
+                                    <TabLabel>
+                                        Số điện thoại
+                                        {phoneSearch.trim() ? (
+                                            <>
+                                                <CountBadge>{filteredPhoneRows.length}</CountBadge>
+                                                <span style={{ margin: '0 4px', color: '#94a3b8' }}>/</span>
+                                                <CountBadge>{phoneRows.length}</CountBadge>
+                                            </>
+                                        ) : (
+                                            <CountBadge>{phoneRows.length}</CountBadge>
+                                        )}
+                                    </TabLabel>
+                                ),
                             },
                         ]}
                     />
@@ -993,7 +1015,12 @@ export const AdminOrgUnit = () => {
                                             defaultActiveKey={filteredPhoneGroups.map((group, index) => `${group.groupName}-${index}`)}
                                             items={filteredPhoneGroups.map((group, index) => ({
                                                 key: `${group.groupName}-${index}`,
-                                                label: `${group.groupName} (${group.rows.length})`,
+                                                label: (
+                                                    <GroupLabel>
+                                                        <span className="group-name">{group.groupName}</span>
+                                                        <CountBadge>{group.rows.length}</CountBadge>
+                                                    </GroupLabel>
+                                                ),
                                                 children: (
                                                     <Table
                                                         rowKey="key"
@@ -1097,15 +1124,23 @@ export const AdminOrgUnit = () => {
                     <Form.Item label="Tên hiển thị" name="displayName">
                         <Input placeholder="VD: Trực ban, Nguyễn Văn A" />
                     </Form.Item>
-                    <Form.Item label="Mã chức vụ" name="positionType">
+                    <Form.Item
+                        label="Mã chức vụ"
+                        name="positionType"
+                        extra={(
+                            <Link to={PATHS.ADMIN.JOB_POSITION}>
+                                Quản lý Danh mục chức vụ
+                            </Link>
+                        )}
+                    >
                         <Select
                             showSearch
                             allowClear
-                            placeholder="Chọn mã chức vụ từ Danh mục chức vụ"
+                            placeholder="Chọn từ Danh mục chức vụ"
                             options={positionOptions}
                             loading={jobPositionQuery.isLoading}
                             optionFilterProp="label"
-                            notFoundContent={jobPositionQuery.isLoading ? 'Đang tải...' : 'Chưa có chức vụ'}
+                            notFoundContent={jobPositionQuery.isLoading ? 'Đang tải...' : 'Chưa có chức vụ. Vào Danh mục chức vụ để thêm.'}
                         />
                     </Form.Item>
                     <Form.Item label="Số điện thoại" name="phone" rules={[{ required: true, message: 'Nhập SĐT' }]}>
