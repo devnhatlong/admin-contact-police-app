@@ -53,14 +53,21 @@ const ORG_UNIT_SCHEMA = {
     sortOrder: { type: "number", default: 0 },
     isActive: { type: "boolean", default: true },
     visibility: { type: "string", enum: VISIBILITY_VALUES, default: DEFAULT_VISIBILITY },
+    cap: { type: "number", required: false, nullable: true, description: "Cấp hành chính (tương đương communes.cap)" },
+    ma_tinh: { type: "string", required: false, nullable: true },
+    ten_tinh: { type: "string", required: false, nullable: true },
+    dan_so: { type: "number", required: false, nullable: true },
+    dtich_km2: { type: "number", required: false, nullable: true },
+    matdo_km2: { type: "number", required: false, nullable: true },
+    address: { type: "string", required: false, nullable: true },
+    tru_so: { type: "string", required: false, nullable: true },
+    sap_nhap: { type: "string", required: false, nullable: true },
     unitProfile: {
         type: "object",
         required: false,
         fields: {
             chief: { type: "string", nullable: true, description: "Trưởng phòng / Trưởng CA xã" },
             hotline: { type: "string", nullable: true, description: "SĐT đơn vị hiển thị danh bạ" },
-            address: { type: "string", nullable: true },
-            truSo: { type: "string", nullable: true, description: "Trụ sở" },
         },
     },
 };
@@ -102,20 +109,25 @@ const validateOrgUnit = (data, isUpdate = false) => {
     return { isValid: errors.length === 0, errors };
 };
 
+const parseOptionalNumber = (value) => {
+    if (value === undefined || value === null || value === "") return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+};
+
+const trimOrNull = (value) => {
+    if (value === undefined || value === null) return null;
+    const trimmed = String(value).trim();
+    return trimmed === "" ? null : trimmed;
+};
+
 const sanitizeUnitProfile = (profile) => {
     if (!profile || typeof profile !== "object") {
-        return { chief: null, hotline: null, address: null, truSo: null };
+        return { chief: null, hotline: null };
     }
-    const trimOrNull = (value) => {
-        if (value === undefined || value === null) return null;
-        const trimmed = String(value).trim();
-        return trimmed === "" ? null : trimmed;
-    };
     return {
         chief: trimOrNull(profile.chief),
         hotline: trimOrNull(profile.hotline),
-        address: trimOrNull(profile.address),
-        truSo: trimOrNull(profile.truSo),
     };
 };
 
@@ -128,6 +140,15 @@ const sanitizeOrgUnitInput = (data) => ({
     sortOrder: data.sortOrder !== undefined ? Number(data.sortOrder) : 0,
     isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
     visibility: normalizeVisibility(data.visibility),
+    cap: parseOptionalNumber(data.cap),
+    ma_tinh: trimOrNull(data.ma_tinh),
+    ten_tinh: trimOrNull(data.ten_tinh),
+    dan_so: parseOptionalNumber(data.dan_so),
+    dtich_km2: parseOptionalNumber(data.dtich_km2),
+    matdo_km2: parseOptionalNumber(data.matdo_km2),
+    address: trimOrNull(data.address) || trimOrNull(data.unitProfile?.address),
+    tru_so: trimOrNull(data.tru_so) || trimOrNull(data.unitProfile?.truSo),
+    sap_nhap: trimOrNull(data.sap_nhap),
     unitProfile: sanitizeUnitProfile(data.unitProfile),
 });
 
@@ -135,11 +156,18 @@ const getDefaultOrgUnitData = () => ({
     sortOrder: 0,
     isActive: true,
     visibility: DEFAULT_VISIBILITY,
+    cap: null,
+    ma_tinh: null,
+    ten_tinh: null,
+    dan_so: null,
+    dtich_km2: null,
+    matdo_km2: null,
+    address: null,
+    tru_so: null,
+    sap_nhap: null,
     unitProfile: {
         chief: null,
         hotline: null,
-        address: null,
-        truSo: null,
     },
 });
 

@@ -156,6 +156,23 @@ export const TableWrapper = styled.div`
     .ant-table-tbody > tr.ant-table-row-selected > td {
         background: #e8f0fe !important;
     }
+
+    /* Tree table: giữ icon expand (+/-) và STT trên cùng một hàng */
+    .ant-table-cell-with-append {
+        white-space: nowrap !important;
+    }
+
+    .ant-table-row-expand-icon {
+        flex-shrink: 0;
+        vertical-align: middle;
+        margin-inline-end: 4px;
+    }
+
+    .ant-table-row-indent {
+        float: none !important;
+        display: inline-block;
+        vertical-align: middle;
+    }
 `;
 
 export const TableFooter = styled.div`

@@ -42,8 +42,18 @@ import {
 const EMPTY_UNIT_PROFILE = {
     chief: '',
     hotline: '',
+};
+
+const EMPTY_GEO_FIELDS = {
+    cap: '',
+    ma_tinh: '',
+    ten_tinh: '',
+    dan_so: '',
+    dtich_km2: '',
+    matdo_km2: '',
     address: '',
-    truSo: '',
+    tru_so: '',
+    sap_nhap: '',
 };
 
 const EMPTY_CHILD_FORM = {
@@ -54,6 +64,7 @@ const EMPTY_CHILD_FORM = {
     sortOrder: 0,
     visibility: DEFAULT_VISIBILITY,
     unitProfile: { ...EMPTY_UNIT_PROFILE },
+    ...EMPTY_GEO_FIELDS,
 };
 
 const EMPTY_ROOT_FORM = {
@@ -64,6 +75,7 @@ const EMPTY_ROOT_FORM = {
     sortOrder: 0,
     visibility: DEFAULT_VISIBILITY,
     unitProfile: { ...EMPTY_UNIT_PROFILE },
+    ...EMPTY_GEO_FIELDS,
 };
 
 const mapUnitToForm = (unit) => ({
@@ -72,28 +84,87 @@ const mapUnitToForm = (unit) => ({
     shortName: unit?.shortName || '',
     sortOrder: unit?.sortOrder ?? 0,
     visibility: unit?.visibility || DEFAULT_VISIBILITY,
+    cap: unit?.cap ?? '',
+    ma_tinh: unit?.ma_tinh || '',
+    ten_tinh: unit?.ten_tinh || '',
+    dan_so: unit?.dan_so ?? '',
+    dtich_km2: unit?.dtich_km2 ?? '',
+    matdo_km2: unit?.matdo_km2 ?? '',
+    address: unit?.address || unit?.unitProfile?.address || '',
+    tru_so: unit?.tru_so || unit?.unitProfile?.truSo || '',
+    sap_nhap: unit?.sap_nhap || '',
     unitProfile: {
         chief: unit?.unitProfile?.chief || '',
         hotline: unit?.unitProfile?.hotline || '',
-        address: unit?.unitProfile?.address || '',
-        truSo: unit?.unitProfile?.truSo || '',
     },
 });
 
-const UnitProfileFields = ({ showDivider = true }) => (
+const OrgUnitBasicFields = ({ typeOptions, showType = true }) => (
     <>
-        {showDivider && <Divider orientation="left" plain>Liên hệ đơn vị (Danh bạ app)</Divider>}
+        {showType && typeOptions && (
+            <Form.Item label="Loại đơn vị" name="orgUnitType" rules={[{ required: true }]}>
+                <Select options={typeOptions} />
+            </Form.Item>
+        )}
+        <Form.Item label="Mã đơn vị" name="code" rules={[{ required: true, message: 'Nhập mã đơn vị' }]}>
+            <Input placeholder="VD: PA05, Z2945" />
+        </Form.Item>
+        <Form.Item label="Tên đầy đủ" name="name" rules={[{ required: true, message: 'Nhập tên đơn vị' }]}>
+            <Input placeholder="VD: Công an phường Phan Thiết" />
+        </Form.Item>
+        <Form.Item label="Tên ngắn" name="shortName">
+            <Input placeholder="Tương đương tên xã/phường" />
+        </Form.Item>
+        <Form.Item label="Thứ tự hiển thị" name="sortOrder">
+            <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item label="Phạm vi hiển thị (Danh bạ app)" name="visibility">
+            <Select options={VISIBILITY_OPTIONS} />
+        </Form.Item>
+    </>
+);
+
+const OrgUnitGeoFields = () => (
+    <>
+        <Divider orientation="left" plain>Thông tin bổ sung (như Xã/Phường)</Divider>
+        <Form.Item label="Cấp" name="cap">
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Cấp hành chính" />
+        </Form.Item>
+        <Form.Item label="Mã tỉnh" name="ma_tinh">
+            <Input placeholder="VD: 68" />
+        </Form.Item>
+        <Form.Item label="Tên tỉnh" name="ten_tinh">
+            <Input placeholder="VD: Lâm Đồng" />
+        </Form.Item>
+        <Form.Item label="Dân số" name="dan_so">
+            <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item label="Diện tích (km²)" name="dtich_km2">
+            <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item label="Mật độ (người/km²)" name="matdo_km2">
+            <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item label="Địa chỉ" name="address">
+            <Input placeholder="Địa chỉ đơn vị" />
+        </Form.Item>
+        <Form.Item label="Trụ sở" name="tru_so">
+            <Input placeholder="Trụ sở làm việc" />
+        </Form.Item>
+        <Form.Item label="Sáp nhập" name="sap_nhap">
+            <Input placeholder="Ghi chú sáp nhập (nếu có)" />
+        </Form.Item>
+    </>
+);
+
+const UnitProfileFields = () => (
+    <>
+        <Divider orientation="left" plain>Liên hệ Danh bạ app</Divider>
         <Form.Item label="Trưởng đơn vị" name={['unitProfile', 'chief']}>
             <Input placeholder="Họ tên trưởng phòng / trưởng CA xã" />
         </Form.Item>
         <Form.Item label="Số điện thoại đơn vị" name={['unitProfile', 'hotline']}>
             <Input placeholder="SĐT hiển thị trên app danh bạ" />
-        </Form.Item>
-        <Form.Item label="Địa chỉ" name={['unitProfile', 'address']}>
-            <Input placeholder="Địa chỉ đơn vị" />
-        </Form.Item>
-        <Form.Item label="Trụ sở" name={['unitProfile', 'truSo']}>
-            <Input placeholder="Trụ sở làm việc" />
         </Form.Item>
     </>
 );
@@ -248,7 +319,11 @@ export const AdminOrgUnit = () => {
     };
 
     const handleCreateRoot = (values) => {
-        createMutation.mutate({ ...values, parentId: null });
+        createMutation.mutate({
+            ...values,
+            orgUnitType: ORG_UNIT_TYPE.TINH,
+            parentId: null,
+        });
     };
 
     const handleUpdate = (values) => {
@@ -269,9 +344,13 @@ export const AdminOrgUnit = () => {
         {
             title: 'STT',
             key: 'stt',
-            width: 60,
-            align: 'center',
-            render: (_, __, index) => getTableRowStt(pagination.currentPage, pagination.pageSize, index),
+            width: 88,
+            align: 'left',
+            render: (_, __, index) => (
+                <span style={{ display: 'inline-block', minWidth: 16, textAlign: 'center' }}>
+                    {getTableRowStt(pagination.currentPage, pagination.pageSize, index)}
+                </span>
+            ),
         },
         { title: 'Mã', dataIndex: 'code', key: 'code', width: 120 },
         { title: 'Tên', dataIndex: 'name', key: 'name' },
@@ -351,6 +430,7 @@ export const AdminOrgUnit = () => {
                                 ? [
                                     `Mã: ${selectedUnit.code || '—'}`,
                                     ORG_UNIT_TYPE_LABELS[selectedUnit.orgUnitType],
+                                    selectedUnit.ten_tinh && selectedUnit.ten_tinh,
                                     selectedUnit.unitProfile?.hotline && `SĐT: ${selectedUnit.unitProfile.hotline}`,
                                     selectedUnit.unitProfile?.chief && `Trưởng: ${selectedUnit.unitProfile.chief}`,
                                 ].filter(Boolean).join(' · ')
@@ -388,6 +468,7 @@ export const AdminOrgUnit = () => {
                             columns={columns}
                             dataSource={selectedUnit ? pagedChildrenRows : []}
                             pagination={false}
+                            expandable={{ indentSize: 16 }}
                             locale={{
                                 emptyText: selectedUnit
                                     ? 'Chưa có đơn vị con. Bấm "Thêm đơn vị con".'
@@ -414,27 +495,11 @@ export const AdminOrgUnit = () => {
                 onOk={() => form.submit()}
                 confirmLoading={createMutation.isPending}
                 okText="Tạo"
-                width={560}
+                width={640}
             >
                 <Form form={form} layout="vertical" onFinish={handleCreateChild}>
-                    <Form.Item label="Loại đơn vị" name="orgUnitType" rules={[{ required: true }]}>
-                        <Select options={childTypeOptions} />
-                    </Form.Item>
-                    <Form.Item label="Mã đơn vị" name="code" rules={[{ required: true, message: 'Nhập mã đơn vị' }]}>
-                        <Input placeholder="VD: PA05, 22918" />
-                    </Form.Item>
-                    <Form.Item label="Tên đầy đủ" name="name" rules={[{ required: true, message: 'Nhập tên đơn vị' }]}>
-                        <Input placeholder="VD: Công an phường Phan Thiết" />
-                    </Form.Item>
-                    <Form.Item label="Tên ngắn" name="shortName">
-                        <Input placeholder="VD: CA phường Phan Thiết" />
-                    </Form.Item>
-                    <Form.Item label="Thứ tự hiển thị" name="sortOrder">
-                        <InputNumber min={0} style={{ width: '100%' }} />
-                    </Form.Item>
-                    <Form.Item label="Phạm vi hiển thị (Danh bạ app)" name="visibility">
-                        <Select options={VISIBILITY_OPTIONS} />
-                    </Form.Item>
+                    <OrgUnitBasicFields typeOptions={childTypeOptions} />
+                    <OrgUnitGeoFields />
                     <UnitProfileFields />
                 </Form>
             </Modal>
@@ -446,24 +511,11 @@ export const AdminOrgUnit = () => {
                 onOk={() => rootForm.submit()}
                 confirmLoading={createMutation.isPending}
                 okText="Tạo"
-                width={560}
+                width={640}
             >
                 <Form form={rootForm} layout="vertical" onFinish={handleCreateRoot}>
-                    <Form.Item label="Mã tỉnh" name="code" rules={[{ required: true, message: 'Nhập mã tỉnh' }]}>
-                        <Input placeholder="VD: CAT_LD" />
-                    </Form.Item>
-                    <Form.Item label="Tên đầy đủ" name="name" rules={[{ required: true, message: 'Nhập tên tỉnh' }]}>
-                        <Input placeholder="VD: Công an tỉnh Lâm Đồng" />
-                    </Form.Item>
-                    <Form.Item label="Tên ngắn" name="shortName">
-                        <Input placeholder="VD: CA tỉnh Lâm Đồng" />
-                    </Form.Item>
-                    <Form.Item label="Thứ tự hiển thị" name="sortOrder">
-                        <InputNumber min={0} style={{ width: '100%' }} />
-                    </Form.Item>
-                    <Form.Item label="Phạm vi hiển thị (Danh bạ app)" name="visibility">
-                        <Select options={VISIBILITY_OPTIONS} />
-                    </Form.Item>
+                    <OrgUnitBasicFields showType={false} />
+                    <OrgUnitGeoFields />
                     <UnitProfileFields />
                 </Form>
             </Modal>
@@ -473,25 +525,12 @@ export const AdminOrgUnit = () => {
                 title={`Sửa: ${formatOrgUnitTitle(selectedUnit)}`}
                 isOpen={isEditOpen}
                 onClose={() => setIsEditOpen(false)}
-                width="480px"
+                width="520px"
             >
                 <Loading isLoading={isLoadingEdit || updateMutation.isPending}>
                     <Form form={editForm} layout="vertical" onFinish={handleUpdate}>
-                        <Form.Item label="Mã đơn vị" name="code" rules={[{ required: true, message: 'Nhập mã đơn vị' }]}>
-                            <Input />
-                        </Form.Item>
-                        <Form.Item label="Tên đầy đủ" name="name" rules={[{ required: true, message: 'Nhập tên đơn vị' }]}>
-                            <Input />
-                        </Form.Item>
-                        <Form.Item label="Tên ngắn" name="shortName">
-                            <Input />
-                        </Form.Item>
-                        <Form.Item label="Thứ tự hiển thị" name="sortOrder">
-                            <InputNumber min={0} style={{ width: '100%' }} />
-                        </Form.Item>
-                        <Form.Item label="Phạm vi hiển thị (Danh bạ app)" name="visibility">
-                            <Select options={VISIBILITY_OPTIONS} />
-                        </Form.Item>
+                        <OrgUnitBasicFields showType={false} />
+                        <OrgUnitGeoFields />
                         <UnitProfileFields />
                         <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
                             <Button type="primary" htmlType="submit" loading={updateMutation.isPending}>
