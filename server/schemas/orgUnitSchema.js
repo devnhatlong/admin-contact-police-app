@@ -7,19 +7,6 @@ const { VISIBILITY_VALUES, DEFAULT_VISIBILITY, normalizeVisibility } = require("
 
 const COLLECTION_NAME = "org_units";
 
-const ORG_UNIT_TYPES = [
-    "tinh",
-    "phong",
-    "xa",
-    "phuong",
-    "thi_tran",
-    "dackhu",
-    "doi",
-    "to",
-    "don",
-    "tram",
-];
-
 const ORG_UNIT_TYPE_LABELS = {
     tinh: "Công an tỉnh",
     phong: "Phòng",
@@ -49,7 +36,7 @@ const CHILD_TYPES_BY_PARENT = {
 const ORG_UNIT_SCHEMA = {
     code: { type: "string", required: true, description: "Mã đơn vị" },
     name: { type: "string", required: true, description: "Tên đầy đủ" },
-    orgUnitType: { type: "string", enum: ORG_UNIT_TYPES, required: true },
+    orgUnitType: { type: "string", required: true, description: "Loại đơn vị" },
     parentId: { type: "string", nullable: true, ref: "org_units._id" },
     orgPath: { type: "array", items: "string" },
     sortOrder: { type: "number", default: 0 },
@@ -90,13 +77,15 @@ const validateOrgUnit = (data, isUpdate = false) => {
         if (!data.name || typeof data.name !== "string" || !data.name.trim()) {
             errors.push("name is required");
         }
-        if (!data.orgUnitType || !ORG_UNIT_TYPES.includes(data.orgUnitType)) {
-            errors.push(`orgUnitType must be one of: ${ORG_UNIT_TYPES.join(", ")}`);
+        if (!data.orgUnitType || typeof data.orgUnitType !== "string" || !data.orgUnitType.trim()) {
+            errors.push("orgUnitType is required");
         }
     }
 
-    if (data.orgUnitType && !ORG_UNIT_TYPES.includes(data.orgUnitType)) {
-        errors.push(`orgUnitType must be one of: ${ORG_UNIT_TYPES.join(", ")}`);
+    if (data.orgUnitType !== undefined && data.orgUnitType !== null) {
+        if (typeof data.orgUnitType !== "string" || !data.orgUnitType.trim()) {
+            errors.push("orgUnitType must be a non-empty string");
+        }
     }
 
     if (data.visibility !== undefined && data.visibility !== null) {
@@ -150,7 +139,7 @@ const getDefaultGeoProfile = () => ({
 const sanitizeOrgUnitInput = (data) => ({
     code: data.code?.trim(),
     name: data.name?.trim(),
-    orgUnitType: data.orgUnitType,
+    orgUnitType: data.orgUnitType?.trim(),
     parentId: data.parentId || null,
     sortOrder: data.sortOrder !== undefined ? Number(data.sortOrder) : 0,
     isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
@@ -168,7 +157,6 @@ module.exports = {
     ORG_UNIT_SCHEMA,
     GEO_PROFILE_SCHEMA,
     LEGACY_GEO_FIELD_KEYS,
-    ORG_UNIT_TYPES,
     ORG_UNIT_TYPE_LABELS,
     CHILD_TYPES_BY_PARENT,
     mapLoaiToOrgType,

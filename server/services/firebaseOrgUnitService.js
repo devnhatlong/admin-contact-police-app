@@ -3,7 +3,6 @@ const admin = require("firebase-admin");
 const { normalizeVisibility } = require("../constants/visibility");
 const {
     COLLECTION_NAME,
-    ORG_UNIT_TYPES,
     validateOrgUnit,
     sanitizeOrgUnitInput,
     sanitizeGeoProfile,
@@ -332,13 +331,6 @@ const importOrgUnitsFromExcel = async (rows = []) => {
             errors.push({
                 row: row.rowNumber,
                 message: `Thiếu trường: ${missing.join(", ")}`,
-            });
-            continue;
-        }
-        if (!ORG_UNIT_TYPES.includes(row.orgUnitType)) {
-            errors.push({
-                row: row.rowNumber,
-                message: `orgUnitType không hợp lệ: ${row.orgUnitType}. Giá trị: ${ORG_UNIT_TYPES.join(", ")}`,
             });
             continue;
         }

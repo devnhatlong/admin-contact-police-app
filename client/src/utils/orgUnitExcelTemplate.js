@@ -139,7 +139,7 @@ const ORG_UNIT_GEO_ROWS = [
         'geoProfile.dan_so': 1900000,
         'geoProfile.dtich_km2': 3536.7,
         'geoProfile.matdo_km2': 538,
-        'geoProfile.address': 'Phường Mỹ Bình, Long Xuyên',
+        'geoProfile.address': 'Phường Cam Ly',
         'geoProfile.tru_so': 'Số 1, đường ...',
         'geoProfile.sap_nhap': '',
     },
