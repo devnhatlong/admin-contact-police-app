@@ -2,6 +2,7 @@ const { getFirestoreDb } = require("../config/firebase");
 const admin = require("firebase-admin");
 const {
     COLLECTION_NAME,
+    normalizeCode,
     validateJobPosition,
     sanitizeJobPositionInput,
 } = require("../schemas/jobPositionSchema");
@@ -56,6 +57,20 @@ const findByName = async (name) => {
     return mapJobPositionDoc(snapshot.docs[0]);
 };
 
+const findByCode = async (code) => {
+    const db = getFirestoreDb();
+    const normalized = normalizeCode(code);
+    if (!normalized) return null;
+
+    const snapshot = await db.collection(COLLECTION_NAME)
+        .where("code", "==", normalized)
+        .limit(1)
+        .get();
+
+    if (snapshot.empty) return null;
+    return mapJobPositionDoc(snapshot.docs[0]);
+};
+
 const createJobPosition = async (payload) => {
     const errors = validateJobPosition(payload);
     if (errors.length) {
@@ -65,9 +80,15 @@ const createJobPosition = async (payload) => {
     }
 
     const data = sanitizeJobPositionInput(payload);
-    const existing = await findByName(data.name);
-    if (existing) {
-        const error = new Error("Chức vụ đã tồn tại");
+    const existingByCode = await findByCode(data.code);
+    if (existingByCode) {
+        const error = new Error("Mã chức vụ đã tồn tại");
+        error.statusCode = 409;
+        throw error;
+    }
+    const existingByName = await findByName(data.name);
+    if (existingByName) {
+        const error = new Error("Tên chức vụ đã tồn tại");
         error.statusCode = 409;
         throw error;
     }
@@ -75,6 +96,7 @@ const createJobPosition = async (payload) => {
     const db = getFirestoreDb();
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
     const docRef = await db.collection(COLLECTION_NAME).add({
+        code: data.code,
         name: data.name,
         sortOrder: data.sortOrder ?? 0,
         isActive: data.isActive !== false,
@@ -98,10 +120,18 @@ const updateJobPosition = async (id, payload) => {
     if (!existing) return null;
 
     const data = sanitizeJobPositionInput(payload);
+    if (data.code) {
+        const duplicate = await findByCode(data.code);
+        if (duplicate && duplicate.id !== id) {
+            const error = new Error("Mã chức vụ đã tồn tại");
+            error.statusCode = 409;
+            throw error;
+        }
+    }
     if (data.name) {
         const duplicate = await findByName(data.name);
         if (duplicate && duplicate.id !== id) {
-            const error = new Error("Chức vụ đã tồn tại");
+            const error = new Error("Tên chức vụ đã tồn tại");
             error.statusCode = 409;
             throw error;
         }
@@ -169,6 +199,7 @@ const deleteAllJobPositions = async () => {
 module.exports = {
     listJobPositions,
     getJobPosition,
+    findByCode,
     createJobPosition,
     updateJobPosition,
     setJobPositionActive,

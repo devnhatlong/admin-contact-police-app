@@ -23,6 +23,7 @@ import {
 } from '../../../../styles/adminWorkspace';
 
 const EMPTY_FORM = {
+    code: '',
     name: '',
     sortOrder: 0,
 };
@@ -135,6 +136,7 @@ export const AdminJobPosition = () => {
     const openEdit = (record) => {
         setEditingItem(record);
         editForm.setFieldsValue({
+            code: record.code || '',
             name: record.name || '',
             sortOrder: record.sortOrder ?? 0,
         });
@@ -197,6 +199,7 @@ export const AdminJobPosition = () => {
             align: 'center',
             render: (_, __, index) => getTableRowStt(pagination.currentPage, pagination.pageSize, index),
         },
+        { title: 'Mã chức vụ', dataIndex: 'code', key: 'code', width: 160 },
         { title: 'Tên chức vụ', dataIndex: 'name', key: 'name' },
         { title: 'Thứ tự', dataIndex: 'sortOrder', key: 'sortOrder', width: 100, align: 'center' },
         {
@@ -314,13 +317,30 @@ export const AdminJobPosition = () => {
                 confirmLoading={createMutation.isPending}
                 okText="Tạo"
             >
-                <Form form={form} layout="vertical" onFinish={(values) => createMutation.mutate(values)}>
+                <Form
+                    form={form}
+                    layout="vertical"
+                    onFinish={(values) => createMutation.mutate({
+                        ...values,
+                        code: values.code?.trim().toLowerCase(),
+                    })}
+                >
+                    <Form.Item
+                        label="Mã chức vụ"
+                        name="code"
+                        rules={[
+                            { required: true, message: 'Nhập mã chức vụ' },
+                            { pattern: /^[a-zA-Z0-9_]+$/, message: 'Chỉ dùng chữ, số và dấu gạch dưới' },
+                        ]}
+                    >
+                        <Input placeholder="VD: truong_phong" />
+                    </Form.Item>
                     <Form.Item
                         label="Tên chức vụ"
                         name="name"
                         rules={[{ required: true, message: 'Nhập tên chức vụ' }]}
                     >
-                        <Input placeholder="VD: Đội trưởng" />
+                        <Input placeholder="VD: Trưởng phòng" />
                     </Form.Item>
                     <Form.Item label="Thứ tự hiển thị" name="sortOrder">
                         <InputNumber min={0} style={{ width: '100%' }} />
@@ -344,15 +364,28 @@ export const AdminJobPosition = () => {
                     layout="vertical"
                     onFinish={(values) => updateMutation.mutate({
                         id: editingItem?._id || editingItem?.id,
-                        data: values,
+                        data: {
+                            ...values,
+                            code: values.code?.trim().toLowerCase(),
+                        },
                     })}
                 >
+                    <Form.Item
+                        label="Mã chức vụ"
+                        name="code"
+                        rules={[
+                            { required: true, message: 'Nhập mã chức vụ' },
+                            { pattern: /^[a-zA-Z0-9_]+$/, message: 'Chỉ dùng chữ, số và dấu gạch dưới' },
+                        ]}
+                    >
+                        <Input placeholder="VD: truong_phong" />
+                    </Form.Item>
                     <Form.Item
                         label="Tên chức vụ"
                         name="name"
                         rules={[{ required: true, message: 'Nhập tên chức vụ' }]}
                     >
-                        <Input placeholder="VD: Đội trưởng" />
+                        <Input placeholder="VD: Trưởng phòng" />
                     </Form.Item>
                     <Form.Item label="Thứ tự hiển thị" name="sortOrder">
                         <InputNumber min={0} style={{ width: '100%' }} />

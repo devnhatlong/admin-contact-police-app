@@ -6,6 +6,8 @@ const {
     sanitizeUnitPhoneInput,
 } = require("../schemas/unitPhoneSchema");
 const { getOrgUnit } = require("./firebaseOrgUnitService");
+const { findByCode } = require("./firebaseJobPositionService");
+const { normalizeCode } = require("../schemas/jobPositionSchema");
 
 const mapUnitPhoneDoc = (doc) => {
     if (!doc || !doc.exists) return null;
@@ -18,12 +20,11 @@ const mapUnitPhoneDoc = (doc) => {
 };
 
 const ensureJobPositionExists = async (positionType) => {
-    const normalized = String(positionType || "").trim();
+    const normalized = normalizeCode(positionType);
     if (!normalized) return;
-    const db = getFirestoreDb();
-    const snapshot = await db.collection("job_positions").where("name", "==", normalized).limit(1).get();
-    if (snapshot.empty) {
-        const err = new Error(`Không tìm thấy chức vụ: ${normalized}`);
+    const position = await findByCode(normalized);
+    if (!position) {
+        const err = new Error(`Không tìm thấy mã chức vụ: ${normalized}`);
         err.statusCode = 400;
         throw err;
     }

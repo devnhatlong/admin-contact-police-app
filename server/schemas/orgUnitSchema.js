@@ -13,6 +13,7 @@ const ORG_UNIT_TYPES = [
     "xa",
     "phuong",
     "thi_tran",
+    "dackhu",
     "doi",
     "to",
     "don",
@@ -25,6 +26,7 @@ const ORG_UNIT_TYPE_LABELS = {
     xa: "Công an xã",
     phuong: "Công an phường",
     thi_tran: "Công an thị trấn",
+    dackhu: "Công an đặc khu",
     doi: "Đội",
     to: "Tổ",
     don: "Đồn",
@@ -32,15 +34,16 @@ const ORG_UNIT_TYPE_LABELS = {
 };
 
 const CHILD_TYPES_BY_PARENT = {
-    tinh: ["phong", "xa", "phuong", "thi_tran", "don", "tram"],
+    tinh: ["phong", "xa", "phuong", "thi_tran", "dackhu", "don", "tram"],
     phong: ["doi", "to"],
     xa: ["doi", "to"],
     phuong: ["doi", "to"],
     thi_tran: ["doi", "to"],
+    dackhu: ["doi", "to"],
     doi: ["to"],
     to: [],
-    don: ["to"],
-    tram: ["to"],
+    don: ["doi", "to"],
+    tram: ["doi", "to"]
 };
 
 const ORG_UNIT_SCHEMA = {

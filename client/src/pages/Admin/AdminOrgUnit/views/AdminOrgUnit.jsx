@@ -253,12 +253,24 @@ export const AdminOrgUnit = () => {
     });
 
     const positionOptions = useMemo(
-        () => (jobPositionQuery.data?.items || []).map((item) => ({
-            value: item.name,
-            label: item.name,
-        })),
+        () => (jobPositionQuery.data?.items || [])
+            .filter((item) => item.code)
+            .map((item) => ({
+                value: item.code,
+                label: item.name ? `${item.name} (${item.code})` : item.code,
+            })),
         [jobPositionQuery.data]
     );
+
+    const positionNameByCode = useMemo(() => {
+        const map = new Map();
+        (jobPositionQuery.data?.items || []).forEach((item) => {
+            if (item.code) {
+                map.set(item.code, item.name || item.code);
+            }
+        });
+        return map;
+    }, [jobPositionQuery.data]);
 
     const accountRows = useMemo(() => {
         const records = accountsQuery.data?.data || accountsQuery.data?.items || [];
@@ -609,7 +621,17 @@ export const AdminOrgUnit = () => {
 
     const phoneColumns = [
         { title: 'Nhãn', dataIndex: 'label', key: 'label', width: 140, render: (v) => v || '—' },
-        { title: 'Kiểu chức vụ (EN)', dataIndex: 'positionType', key: 'positionType', width: 180, render: (v) => v || '—' },
+        {
+            title: 'Mã chức vụ',
+            dataIndex: 'positionType',
+            key: 'positionType',
+            width: 200,
+            render: (code) => {
+                if (!code) return '—';
+                const name = positionNameByCode.get(code);
+                return name ? `${name} (${code})` : code;
+            },
+        },
         { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone', width: 140 },
         {
             title: 'Trạng thái',
@@ -1000,11 +1022,11 @@ export const AdminOrgUnit = () => {
                     <Form.Item label="Nhãn" name="label">
                         <Input placeholder="VD: Tổng đài, Trực ban" />
                     </Form.Item>
-                    <Form.Item label="Kiểu chức vụ" name="positionType">
+                    <Form.Item label="Mã chức vụ" name="positionType">
                         <Select
                             showSearch
                             allowClear
-                            placeholder="Chọn từ Danh mục chức vụ"
+                            placeholder="Chọn mã chức vụ từ Danh mục chức vụ"
                             options={positionOptions}
                             loading={jobPositionQuery.isLoading}
                             optionFilterProp="label"
