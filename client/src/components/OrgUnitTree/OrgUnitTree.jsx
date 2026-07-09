@@ -6,7 +6,7 @@ import './style.css';
 const renderNodeTitle = (node) => (
     <span className="org-tree-node">
         {node.code && <span className="org-tree-code">{node.code}</span>}
-        <span className="org-tree-name">{node.shortName || node.name}</span>
+        <span className="org-tree-name">{node.name}</span>
     </span>
 );
 
@@ -28,7 +28,7 @@ const filterTree = (nodes, keyword) => {
     const walk = (items) => {
         return items
             .map((node) => {
-                const searchText = [node.code, node.shortName, node.name]
+                const searchText = [node.code, node.name]
                     .filter(Boolean)
                     .join(' ')
                     .toLowerCase();

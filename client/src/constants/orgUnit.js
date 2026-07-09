@@ -45,7 +45,7 @@ export const getOrgUnitTypeOptions = (parentType) => {
 export const formatOrgUnitTitle = (node) => {
     if (!node) return '';
     const code = node.code ? `${node.code} ` : '';
-    const name = node.shortName || node.name || '';
+    const name = node.name || '';
     const typeLabel = ORG_UNIT_TYPE_LABELS[node.orgUnitType] ? ` (${ORG_UNIT_TYPE_LABELS[node.orgUnitType]})` : '';
     return `${code}${name}${typeLabel}`.trim();
 };

@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const xlsx = require("xlsx");
 const firebaseOrgUnitService = require("../services/firebaseOrgUnitService");
 
 const getOrgUnitTree = asyncHandler(async (req, res) => {
@@ -56,6 +57,34 @@ const setOrgUnitActive = asyncHandler(async (req, res) => {
     });
 });
 
+const importFromExcel = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: "Chưa tải file lên" });
+    }
+
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(sheet);
+
+    const result = await firebaseOrgUnitService.importOrgUnitsFromExcel(data);
+
+    res.status(200).json({
+        success: true,
+        message: "Import đơn vị tổ chức hoàn tất",
+        ...result,
+    });
+});
+
+const deleteAllOrgUnits = asyncHandler(async (_req, res) => {
+    const result = await firebaseOrgUnitService.deleteAllOrgUnits();
+    res.status(200).json({
+        success: true,
+        ...result,
+        message: "Đã xóa toàn bộ dữ liệu đơn vị và CBCS liên quan để import lại từ đầu",
+    });
+});
+
 module.exports = {
     getOrgUnitTree,
     listOrgUnits,
@@ -63,4 +92,6 @@ module.exports = {
     createOrgUnit,
     updateOrgUnit,
     setOrgUnitActive,
+    importFromExcel,
+    deleteAllOrgUnits,
 };

@@ -150,7 +150,8 @@ export const AdminCbcsUser = () => {
     const orgUnitTreeQuery = useQuery({
         queryKey: ['org-unit-tree-cbcs'],
         queryFn: () => orgUnitService.getOrgUnitTree(false),
-        staleTime: 5 * 60 * 1000,
+        staleTime: 0,
+        refetchOnMount: 'always',
     });
 
     const jobPositionQuery = useQuery({
