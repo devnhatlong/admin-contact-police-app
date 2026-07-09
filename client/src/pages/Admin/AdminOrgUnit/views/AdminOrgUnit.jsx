@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Divider, Form, Input, InputNumber, Modal, Select, Switch, Table, Tabs, Tag } from 'antd';
+import { Button, Collapse, Divider, Form, Input, InputNumber, Modal, Select, Switch, Table, Tabs, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -50,6 +50,7 @@ import {
 
 const EMPTY_PHONE_FORM = {
     label: '',
+    positionType: '',
     phone: '',
     sortOrder: 0,
     isActive: true,
@@ -262,6 +263,21 @@ export const AdminOrgUnit = () => {
         }));
     }, [phonesQuery.data]);
 
+    const phoneGroups = useMemo(() => {
+        const groups = new Map();
+        phoneRows.forEach((item) => {
+            const label = (item.label || 'Chưa gắn nhãn').trim();
+            if (!groups.has(label)) {
+                groups.set(label, []);
+            }
+            groups.get(label).push(item);
+        });
+        return Array.from(groups.entries()).map(([label, rows]) => ({
+            label,
+            rows,
+        }));
+    }, [phoneRows]);
+
     const createMutation = useMutation({
         mutationFn: (data) => orgUnitService.createOrgUnit(data),
         onSuccess: (res) => {
@@ -427,6 +443,7 @@ export const AdminOrgUnit = () => {
         if (record) {
             phoneForm.setFieldsValue({
                 label: record.label || '',
+                positionType: record.positionType || '',
                 phone: record.phone || '',
                 sortOrder: record.sortOrder ?? 0,
                 isActive: record.isActive !== false,
@@ -527,6 +544,7 @@ export const AdminOrgUnit = () => {
 
     const phoneColumns = [
         { title: 'Nhãn', dataIndex: 'label', key: 'label', width: 140, render: (v) => v || '—' },
+        { title: 'Kiểu chức vụ (EN)', dataIndex: 'positionType', key: 'positionType', width: 180, render: (v) => v || '—' },
         { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone', width: 140 },
         {
             title: 'Trạng thái',
@@ -774,14 +792,47 @@ export const AdminOrgUnit = () => {
                         />
                         )}
                         {activeTab === 'phones' && (
-                        <Table
-                            rowKey="key"
-                            columns={phoneColumns}
-                            dataSource={selectedUnit ? phoneRows : []}
-                            loading={phonesQuery.isLoading}
-                            pagination={false}
-                            locale={{ emptyText: selectedUnit ? 'Chưa có SĐT. Bấm "Thêm SĐT".' : 'Chọn đơn vị bên trái' }}
-                        />
+                        <>
+                            {!selectedUnit ? (
+                                <Table
+                                    rowKey="key"
+                                    columns={phoneColumns}
+                                    dataSource={[]}
+                                    loading={false}
+                                    pagination={false}
+                                    locale={{ emptyText: 'Chọn đơn vị bên trái' }}
+                                />
+                            ) : (
+                                phoneGroups.length === 0 && !phonesQuery.isLoading ? (
+                                    <Table
+                                        rowKey="key"
+                                        columns={phoneColumns}
+                                        dataSource={[]}
+                                        loading={false}
+                                        pagination={false}
+                                        locale={{ emptyText: 'Chưa có SĐT. Bấm "Thêm SĐT".' }}
+                                    />
+                                ) : (
+                                    <Collapse
+                                        style={{ background: '#fff' }}
+                                        items={phoneGroups.map((group, index) => ({
+                                            key: `${group.label}-${index}`,
+                                            label: `${group.label} (${group.rows.length})`,
+                                            children: (
+                                                <Table
+                                                    rowKey="key"
+                                                    columns={phoneColumns}
+                                                    dataSource={group.rows}
+                                                    loading={phonesQuery.isLoading}
+                                                    pagination={false}
+                                                    size="small"
+                                                />
+                                            ),
+                                        }))}
+                                    />
+                                )
+                            )}
+                        </>
                         )}
                     </TableWrapper>
 
@@ -862,6 +913,9 @@ export const AdminOrgUnit = () => {
                 <Form form={phoneForm} layout="vertical" onFinish={handlePhoneSubmit}>
                     <Form.Item label="Nhãn" name="label">
                         <Input placeholder="VD: Tổng đài, Trực ban" />
+                    </Form.Item>
+                    <Form.Item label="Kiểu chức vụ (EN)" name="positionType">
+                        <Input placeholder="VD: head_of_unit, duty_officer" />
                     </Form.Item>
                     <Form.Item label="Số điện thoại" name="phone" rules={[{ required: true, message: 'Nhập SĐT' }]}>
                         <Input placeholder="02633888888" />

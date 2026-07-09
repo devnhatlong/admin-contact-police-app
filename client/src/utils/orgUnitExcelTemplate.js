@@ -6,7 +6,7 @@ const buildWorkbook = async ({ columns, rows, filename, note }) => {
     workbook.creator = 'Admin Danh bạ CALD';
     workbook.created = new Date();
 
-    const dataSheet = workbook.addWorksheet('Du_lieu', {
+    const dataSheet = workbook.addWorksheet('Data', {
         views: [{ state: 'frozen', ySplit: 1 }],
     });
 
@@ -33,7 +33,7 @@ const buildWorkbook = async ({ columns, rows, filename, note }) => {
         to: { row: 1, column: columns.length },
     };
 
-    const guideSheet = workbook.addWorksheet('Huong_dan');
+    const guideSheet = workbook.addWorksheet('Guide');
     guideSheet.columns = [
         { header: 'Cột', key: 'column', width: 20 },
         { header: 'Bắt buộc', key: 'required', width: 10 },
@@ -103,6 +103,7 @@ export const ORG_UNIT_GEO_IMPORT_COLUMNS = [
 export const UNIT_PHONE_IMPORT_COLUMNS = [
     { key: 'orgUnitCode', header: 'orgUnitCode', width: 14, required: true, description: 'Mã đơn vị' },
     { key: 'label', header: 'label', width: 16, description: 'Nhãn số điện thoại' },
+    { key: 'positionType', header: 'positionType', width: 18, description: 'Kiểu chức vụ (EN), ví dụ: head_of_unit' },
     { key: 'phone', header: 'phone', width: 18, required: true, description: 'Số điện thoại đơn vị' },
     { key: 'sortOrder', header: 'sortOrder', width: 10, description: 'Thứ tự hiển thị' },
     { key: 'isActive', header: 'isActive', width: 10, description: '1 = dùng, 0 = khóa' },
@@ -148,6 +149,7 @@ const UNIT_PHONE_ROWS = [
     {
         orgUnitCode: 'PA05',
         label: 'Trực ban',
+        positionType: 'duty_officer',
         phone: '02963888888',
         sortOrder: 1,
         isActive: 1,
@@ -158,7 +160,7 @@ export const downloadOrgUnitImportTemplate = async () => {
     await buildWorkbook({
         columns: ORG_UNIT_IMPORT_COLUMNS,
         rows: ORG_UNIT_ROWS,
-        filename: 'mau_import_don_vi.xlsx',
+        filename: 'org_unit_import_template.xlsx',
         note: 'Mẫu này chỉ gồm thông tin đơn vị. Địa lý và số điện thoại import bằng file riêng.',
     });
 };
@@ -167,7 +169,7 @@ export const downloadOrgUnitGeoImportTemplate = async () => {
     await buildWorkbook({
         columns: ORG_UNIT_GEO_IMPORT_COLUMNS,
         rows: ORG_UNIT_GEO_ROWS,
-        filename: 'mau_import_dia_ly_don_vi.xlsx',
+        filename: 'org_unit_geo_import_template.xlsx',
         note: 'Map theo orgUnitCode đã có trong hệ thống.',
     });
 };
@@ -176,7 +178,7 @@ export const downloadUnitPhoneImportTemplate = async () => {
     await buildWorkbook({
         columns: UNIT_PHONE_IMPORT_COLUMNS,
         rows: UNIT_PHONE_ROWS,
-        filename: 'mau_import_sdt_don_vi.xlsx',
+        filename: 'unit_phone_import_template.xlsx',
         note: 'Map theo orgUnitCode đã có trong hệ thống. Mỗi dòng là 1 số điện thoại.',
     });
 };

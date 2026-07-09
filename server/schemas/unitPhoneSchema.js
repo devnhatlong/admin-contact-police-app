@@ -8,6 +8,7 @@ const COLLECTION_NAME = "unit_phones";
 const UNIT_PHONE_SCHEMA = {
     orgUnitId: { type: "string", required: true, ref: "org_units._id" },
     label: { type: "string", required: false, nullable: true, description: "Nhãn: Tổng đài, Trực ban..." },
+    positionType: { type: "string", required: false, nullable: true, description: "Kiểu chức vụ (EN), ví dụ: head_of_unit" },
     phone: { type: "string", required: true },
     sortOrder: { type: "number", default: 0 },
     isActive: { type: "boolean", default: true, description: "Hiện/ẩn số điện thoại" },
@@ -41,6 +42,7 @@ const validateUnitPhone = (data, isUpdate = false) => {
 const sanitizeUnitPhoneInput = (data) => ({
     orgUnitId: data.orgUnitId?.trim(),
     label: trimOrNull(data.label),
+    positionType: trimOrNull(data.positionType),
     phone: data.phone?.trim(),
     sortOrder: data.sortOrder !== undefined ? Number(data.sortOrder) : 0,
     isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,

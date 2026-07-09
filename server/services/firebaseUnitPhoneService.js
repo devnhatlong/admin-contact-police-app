@@ -95,6 +95,7 @@ const updateUnitPhone = async (id, payload) => {
 
     await docRef.update({
         label: data.label,
+        positionType: data.positionType,
         phone: data.phone,
         sortOrder: data.sortOrder,
         isActive: data.isActive,
