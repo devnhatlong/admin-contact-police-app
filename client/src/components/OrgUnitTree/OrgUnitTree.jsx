@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Input, Tree, Empty } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { Button, Input, Tree, Empty } from 'antd';
+import { SearchOutlined, NodeExpandOutlined, NodeCollapseOutlined } from '@ant-design/icons';
 import './style.css';
 
 const renderNodeTitle = (node) => (
@@ -51,7 +51,7 @@ export const OrgUnitTree = ({
     className = '',
 }) => {
     const [searchValue, setSearchValue] = useState('');
-    const [expandedKeys, setExpandedKeys] = useState([]);
+    const [expandedKeys, setExpandedKeys] = useState(null);
 
     const filteredTree = useMemo(
         () => filterTree(treeData, searchValue.trim()),
@@ -60,29 +60,64 @@ export const OrgUnitTree = ({
 
     const antTreeData = useMemo(() => mapToTreeData(filteredTree), [filteredTree]);
 
-    const allKeys = useMemo(() => {
+    const expandableKeys = useMemo(() => {
         const keys = [];
         const walk = (nodes) => {
             nodes.forEach((node) => {
-                keys.push(node._id || node.id);
-                if (node.children?.length) walk(node.children);
+                if (node.children?.length) {
+                    keys.push(node._id || node.id);
+                    walk(node.children);
+                }
             });
         };
         walk(filteredTree);
         return keys;
     }, [filteredTree]);
 
+    const defaultExpandedKeys = useMemo(
+        () => expandableKeys.slice(0, 3),
+        [expandableKeys]
+    );
+
+    const effectiveExpandedKeys = expandedKeys ?? defaultExpandedKeys;
+    const isFullyExpanded =
+        expandableKeys.length > 0 &&
+        expandableKeys.every((key) => effectiveExpandedKeys.includes(key));
+    const isFullyCollapsed = effectiveExpandedKeys.length === 0;
+
     return (
         <div className={`org-tree-panel ${className}`}>
             {showSearch && (
-                <Input
-                    allowClear
-                    prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
-                    placeholder="Tìm đơn vị..."
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                    className="org-tree-search"
-                />
+                <>
+                    <Input
+                        allowClear
+                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                        placeholder="Tìm đơn vị..."
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                        className="org-tree-search"
+                    />
+                    <div className="org-tree-toolbar">
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<NodeExpandOutlined />}
+                            disabled={isFullyExpanded}
+                            onClick={() => setExpandedKeys(expandableKeys)}
+                        >
+                            Mở rộng
+                        </Button>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<NodeCollapseOutlined />}
+                            disabled={isFullyCollapsed}
+                            onClick={() => setExpandedKeys([])}
+                        >
+                            Thu gọn
+                        </Button>
+                    </div>
+                </>
             )}
             {antTreeData.length === 0 ? (
                 <Empty description="Chưa có đơn vị" image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -93,7 +128,7 @@ export const OrgUnitTree = ({
                         blockNode
                         treeData={antTreeData}
                         selectedKeys={selectedKey ? [selectedKey] : []}
-                        expandedKeys={expandedKeys.length ? expandedKeys : allKeys.slice(0, 3)}
+                        expandedKeys={effectiveExpandedKeys}
                         onExpand={(keys) => setExpandedKeys(keys)}
                         onSelect={(keys, info) => {
                             if (keys.length && onSelect) {

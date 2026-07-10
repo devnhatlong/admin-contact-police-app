@@ -45,8 +45,26 @@
 }
 
 .org-tree-panel .org-tree-search {
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+.org-tree-toolbar {
+    display: flex;
+    gap: 4px;
     margin-bottom: 12px;
     flex-shrink: 0;
+}
+
+.org-tree-toolbar .ant-btn {
+    flex: 1;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.org-tree-toolbar .ant-btn:not(:disabled):hover {
+    color: #1677ff;
+    background: #e8f0fe;
 }
 
 .org-tree-panel .ant-tree .ant-tree-node-content-wrapper {
