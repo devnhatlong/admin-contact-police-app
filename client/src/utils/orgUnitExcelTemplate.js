@@ -104,7 +104,9 @@ export const UNIT_PHONE_IMPORT_COLUMNS = [
     { key: 'orgUnitCode', header: 'orgUnitCode', width: 14, required: true, description: 'Mã đơn vị' },
     { key: 'displayName', header: 'displayName', width: 20, description: 'Tên hiển thị trên danh bạ (VD: Trực ban, tên thủ trưởng)' },
     { key: 'positionType', header: 'positionType', width: 18, description: 'Mã chức vụ (code) trong Danh mục chức vụ, VD: truong_phong' },
-    { key: 'phone', header: 'phone', width: 18, required: true, description: 'Số điện thoại đơn vị' },
+    { key: 'phone1', header: 'phone1', width: 16, required: true, description: 'SĐT thứ 1 (bắt buộc ít nhất 1 số)' },
+    { key: 'phone2', header: 'phone2', width: 16, description: 'SĐT thứ 2 (để trống nếu không có)' },
+    { key: 'phone3', header: 'phone3', width: 16, description: 'SĐT thứ 3 (để trống nếu không có)' },
     { key: 'sortOrder', header: 'sortOrder', width: 10, description: 'Thứ tự hiển thị' },
     { key: 'isActive', header: 'isActive', width: 10, description: '1 = dùng, 0 = khóa' },
 ];
@@ -150,7 +152,9 @@ const UNIT_PHONE_ROWS = [
         orgUnitCode: 'PA05',
         displayName: 'Trực ban Công an tỉnh',
         positionType: 'truong_phong',
-        phone: '02963888888',
+        phone1: '02963888888',
+        phone2: '0901234567',
+        phone3: '',
         sortOrder: 1,
         isActive: 1,
     },
@@ -179,6 +183,6 @@ export const downloadUnitPhoneImportTemplate = async () => {
         columns: UNIT_PHONE_IMPORT_COLUMNS,
         rows: UNIT_PHONE_ROWS,
         filename: 'unit_phone_import_template.xlsx',
-        note: 'Map theo orgUnitCode đã có trong hệ thống. Mỗi dòng là 1 số điện thoại.',
+        note: 'Map theo orgUnitCode đã có. Mỗi dòng = 1 người/mục (displayName) + nhiều SĐT (phone1, phone2, phone3...). Có thể thêm cột phone4, phone5...',
     });
 };

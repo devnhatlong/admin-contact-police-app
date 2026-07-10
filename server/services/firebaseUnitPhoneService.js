@@ -2,6 +2,7 @@ const { getFirestoreDb } = require("../config/firebase");
 const admin = require("firebase-admin");
 const {
     COLLECTION_NAME,
+    normalizePhones,
     validateUnitPhone,
     sanitizeUnitPhoneInput,
 } = require("../schemas/unitPhoneSchema");
@@ -12,12 +13,16 @@ const { normalizeCode } = require("../schemas/jobPositionSchema");
 const mapUnitPhoneDoc = (doc) => {
     if (!doc || !doc.exists) return null;
     const data = doc.data();
+    const phones = normalizePhones(data);
     return {
         id: doc.id,
         _id: doc.id,
         key: doc.id,
         ...data,
         displayName: data.displayName ?? data.label ?? null,
+        phones,
+        // Giữ phone (số đầu) để tương thích client cũ nếu còn đọc field này
+        phone: phones[0] || null,
     };
 };
 
@@ -36,7 +41,14 @@ const sortItems = (items) => (
     [...items].sort((a, b) => {
         const orderDiff = (a.sortOrder || 0) - (b.sortOrder || 0);
         if (orderDiff !== 0) return orderDiff;
-        return String(a.phone || "").localeCompare(String(b.phone || ""), "vi");
+        const nameA = String(a.displayName || "");
+        const nameB = String(b.displayName || "");
+        const nameDiff = nameA.localeCompare(nameB, "vi");
+        if (nameDiff !== 0) return nameDiff;
+        return String((a.phones && a.phones[0]) || "").localeCompare(
+            String((b.phones && b.phones[0]) || ""),
+            "vi"
+        );
     })
 );
 
@@ -113,7 +125,8 @@ const updateUnitPhone = async (id, payload) => {
     await docRef.update({
         displayName: data.displayName,
         positionType: data.positionType,
-        phone: data.phone,
+        phones: data.phones,
+        phone: admin.firestore.FieldValue.delete(),
         sortOrder: data.sortOrder,
         isActive: data.isActive,
         updatedAt: timestamp,
@@ -172,9 +185,33 @@ const PHONE_ROW_ALIASES = {
     orgunitcode: ["orgunitcode", "ma_don_vi", "code"],
     displayname: ["displayname", "display_name", "ten_hien_thi", "label", "nhan", "nhãn"],
     positiontype: ["positiontype", "position_code", "ma_chuc_vu"],
-    phone: ["phone", "so_dien_thoai", "sdt"],
     sortorder: ["sortorder", "thu_tu", "thứ_tự"],
     isactive: ["isactive", "hoat_dong", "hoạt_động"],
+};
+
+const PHONE_COLUMN_PATTERN = /^(phone|sdt|so_dien_thoai)(\d*)$/;
+
+const extractPhonesFromRow = (raw = {}) => {
+    const entries = [];
+    Object.entries(raw).forEach(([key, value]) => {
+        const nk = normalizeRowKey(key);
+        const match = nk.match(PHONE_COLUMN_PATTERN);
+        if (!match) return;
+        const phone = trimOrEmpty(value);
+        if (!phone) return;
+        const suffix = match[2];
+        const order = suffix === "" ? 0 : Number(suffix);
+        entries.push({ order: Number.isFinite(order) ? order : 999, phone });
+    });
+    entries.sort((a, b) => a.order - b.order);
+    const seen = new Set();
+    const result = [];
+    entries.forEach(({ phone }) => {
+        if (seen.has(phone)) return;
+        seen.add(phone);
+        result.push(phone);
+    });
+    return result;
 };
 
 const mapPhoneImportRow = (raw = {}) => {
@@ -188,6 +225,7 @@ const mapPhoneImportRow = (raw = {}) => {
             }
         }
     });
+    normalized.phones = extractPhonesFromRow(raw);
     return normalized;
 };
 
@@ -203,14 +241,14 @@ const importUnitPhonesFromExcel = async (rows = []) => {
         const rowNumber = index + 2;
         const mapped = mapPhoneImportRow(rows[index]);
         const orgUnitCode = trimOrEmpty(mapped.orgunitcode);
-        const phone = trimOrEmpty(mapped.phone);
+        const phones = mapped.phones || [];
 
         if (!orgUnitCode) {
             errors.push({ row: rowNumber, message: "Thiếu trường: orgUnitCode" });
             continue;
         }
-        if (!phone) {
-            errors.push({ row: rowNumber, message: "Thiếu trường: phone" });
+        if (!phones.length) {
+            errors.push({ row: rowNumber, message: "Thiếu SĐT (phone / phone1 / phone2...)" });
             continue;
         }
 
@@ -227,7 +265,7 @@ const importUnitPhonesFromExcel = async (rows = []) => {
             orgUnitId,
             displayName: trimOrEmpty(mapped.displayname) || null,
             positionType: trimOrEmpty(mapped.positiontype) || null,
-            phone,
+            phones,
             sortOrder: parseOptionalNumber(mapped.sortorder) ?? 0,
             isActive: parseBoolean(mapped.isactive, true),
         };

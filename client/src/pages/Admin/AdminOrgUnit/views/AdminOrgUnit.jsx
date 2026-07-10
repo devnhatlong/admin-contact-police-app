@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Collapse, Divider, Form, Input, InputNumber, Modal, Select, Switch, Table, Tabs, Tag } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined, DeleteOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Divider, Form, Input, InputNumber, Modal, Select, Space, Switch, Table, Tabs, Tag } from 'antd';
+import { PlusOutlined, MinusCircleOutlined, EditOutlined, StopOutlined, CheckOutlined, DeleteOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -32,7 +32,7 @@ import cbcsUserService from '../../../../services/cbcsUserService';
 import unitPhoneService from '../../../../services/unitPhoneService';
 import jobPositionService from '../../../../services/jobPositionService';
 import TablePaginationFooter from '../../../../components/TablePaginationFooter/TablePaginationFooter';
-import { WrapperHeader, PhoneTabScroll, CountBadge, TabLabel, GroupLabel } from '../styles/style';
+import { WrapperHeader, CountBadge, TabLabel } from '../styles/style';
 import {
     WorkspaceLayout,
     SidebarPanel,
@@ -53,9 +53,16 @@ import {
 const EMPTY_PHONE_FORM = {
     displayName: '',
     positionType: '',
-    phone: '',
+    phones: [''],
     sortOrder: 0,
     isActive: true,
+};
+
+const formatPhones = (record) => {
+    if (Array.isArray(record?.phones) && record.phones.length) {
+        return record.phones.filter(Boolean).join(', ');
+    }
+    return record?.phone || '';
 };
 
 const EMPTY_GEO_PROFILE = {
@@ -302,32 +309,17 @@ export const AdminOrgUnit = () => {
         if (!keyword) return phoneRows;
         return phoneRows.filter((item) => {
             const displayName = (item.displayName || item.label || '').toLowerCase();
-            const phone = (item.phone || '').toLowerCase();
+            const phonesText = formatPhones(item).toLowerCase();
             const positionCode = (item.positionType || '').toLowerCase();
             const positionName = (positionNameByCode.get(item.positionType) || '').toLowerCase();
             return (
                 displayName.includes(keyword)
-                || phone.includes(keyword)
+                || phonesText.includes(keyword)
                 || positionCode.includes(keyword)
                 || positionName.includes(keyword)
             );
         });
     }, [phoneRows, phoneSearch, positionNameByCode]);
-
-    const filteredPhoneGroups = useMemo(() => {
-        const groups = new Map();
-        filteredPhoneRows.forEach((item) => {
-            const groupName = (item.displayName || item.label || 'Chưa có tên hiển thị').trim();
-            if (!groups.has(groupName)) {
-                groups.set(groupName, []);
-            }
-            groups.get(groupName).push(item);
-        });
-        return Array.from(groups.entries()).map(([groupName, rows]) => ({
-            groupName,
-            rows,
-        }));
-    }, [filteredPhoneRows]);
 
     const createMutation = useMutation({
         mutationFn: (data) => orgUnitService.createOrgUnit(data),
@@ -513,10 +505,13 @@ export const AdminOrgUnit = () => {
         jobPositionQuery.refetch();
         setEditingPhone(record);
         if (record) {
+            const phones = Array.isArray(record.phones) && record.phones.length
+                ? record.phones
+                : (record.phone ? [record.phone] : ['']);
             phoneForm.setFieldsValue({
                 displayName: record.displayName || record.label || '',
                 positionType: record.positionType || '',
-                phone: record.phone || '',
+                phones,
                 sortOrder: record.sortOrder ?? 0,
                 isActive: record.isActive !== false,
             });
@@ -527,14 +522,20 @@ export const AdminOrgUnit = () => {
     };
 
     const handlePhoneSubmit = (values) => {
+        const phones = (values.phones || []).map((p) => String(p || '').trim()).filter(Boolean);
+        if (!phones.length) {
+            message.error('Nhập ít nhất 1 số điện thoại');
+            return;
+        }
+        const payload = { ...values, phones };
         if (editingPhone) {
             phoneUpdateMutation.mutate({
                 id: editingPhone._id || editingPhone.id,
-                data: values,
+                data: payload,
             });
         } else {
             phoneCreateMutation.mutate({
-                ...values,
+                ...payload,
                 orgUnitId: selectedUnitId,
             });
         }
@@ -547,7 +548,7 @@ export const AdminOrgUnit = () => {
         }
         Modal.confirm({
             title: 'Xóa các SĐT đã chọn?',
-            content: `Bạn sắp xóa ${selectedPhoneKeys.length} SĐT`,
+            content: `Bạn sắp xóa ${selectedPhoneKeys.length} mục danh bạ`,
             okText: 'Xóa',
             okButtonProps: { danger: true },
             cancelText: 'Hủy',
@@ -571,14 +572,14 @@ export const AdminOrgUnit = () => {
         }
         Modal.confirm({
             title: 'Xóa tất cả SĐT của đơn vị?',
-            content: `Bạn sắp xóa ${phoneRows.length} SĐT`,
+            content: `Bạn sắp xóa ${phoneRows.length} mục danh bạ`,
             okText: 'Xóa tất cả',
             okButtonProps: { danger: true },
             cancelText: 'Hủy',
             onOk: async () => {
                 try {
                     await Promise.all(phoneRows.map((item) => unitPhoneService.deleteUnitPhone(item._id || item.id)));
-                    message.success(`Đã xóa ${phoneRows.length} SĐT`);
+                    message.success(`Đã xóa ${phoneRows.length} mục danh bạ`);
                     setSelectedPhoneKeys([]);
                     phonesQuery.refetch();
                 } catch {
@@ -759,7 +760,13 @@ export const AdminOrgUnit = () => {
                 return name ? `${name} (${code})` : code;
             },
         },
-        { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone', width: 140 },
+        {
+            title: 'Số điện thoại',
+            dataIndex: 'phones',
+            key: 'phones',
+            width: 220,
+            render: (_, record) => formatPhones(record) || '—',
+        },
         {
             title: 'Trạng thái',
             dataIndex: 'isActive',
@@ -792,7 +799,7 @@ export const AdminOrgUnit = () => {
                         danger
                         icon={<DeleteOutlined />}
                         onClick={() => Modal.confirm({
-                            title: 'Xóa SĐT này?',
+                            title: 'Xóa mục danh bạ này?',
                             onOk: () => phoneDeleteMutation.mutate(record._id || record.id),
                         })}
                     />
@@ -1102,70 +1109,26 @@ export const AdminOrgUnit = () => {
                         />
                         )}
                         {activeTab === 'phones' && (
-                        <>
-                            {!selectedUnit ? (
-                                <Table
-                                    rowKey="key"
-                                    columns={phoneColumns}
-                                    dataSource={[]}
-                                    loading={false}
-                                    pagination={false}
-                                    locale={{ emptyText: 'Chọn đơn vị bên trái' }}
-                                />
-                            ) : (
-                                <PhoneTabScroll>
-                                    {phoneRows.length === 0 && !phonesQuery.isLoading ? (
-                                        <Table
-                                            rowKey="key"
-                                            columns={phoneColumns}
-                                            dataSource={[]}
-                                            loading={false}
-                                            pagination={false}
-                                            locale={{ emptyText: 'Chưa có SĐT. Bấm "Thêm SĐT".' }}
-                                        />
-                                    ) : filteredPhoneGroups.length === 0 ? (
-                                        <Table
-                                            rowKey="key"
-                                            columns={phoneColumns}
-                                            dataSource={[]}
-                                            loading={phonesQuery.isLoading}
-                                            pagination={false}
-                                            locale={{ emptyText: 'Không tìm thấy SĐT phù hợp' }}
-                                        />
-                                    ) : (
-                                        <Collapse
-                                            style={{ background: '#fff' }}
-                                            defaultActiveKey={filteredPhoneGroups.map((group, index) => `${group.groupName}-${index}`)}
-                                            items={filteredPhoneGroups.map((group, index) => ({
-                                                key: `${group.groupName}-${index}`,
-                                                label: (
-                                                    <GroupLabel>
-                                                        <span className="group-name">{group.groupName}</span>
-                                                        <CountBadge>{group.rows.length}</CountBadge>
-                                                    </GroupLabel>
-                                                ),
-                                                children: (
-                                                    <Table
-                                                        rowKey="key"
-                                                        columns={phoneColumns}
-                                                        dataSource={group.rows}
-                                                        loading={phonesQuery.isLoading}
-                                                        rowSelection={{
-                                                            selectedRowKeys: selectedPhoneKeys,
-                                                            onChange: setSelectedPhoneKeys,
-                                                            preserveSelectedRowKeys: true,
-                                                        }}
-                                                        pagination={false}
-                                                        size="small"
-                                                        scroll={{ x: 720 }}
-                                                    />
-                                                ),
-                                            }))}
-                                        />
-                                    )}
-                                </PhoneTabScroll>
-                            )}
-                        </>
+                        <Table
+                            rowKey="key"
+                            columns={phoneColumns}
+                            dataSource={selectedUnit ? filteredPhoneRows : []}
+                            loading={!!selectedUnit && phonesQuery.isLoading}
+                            pagination={false}
+                            rowSelection={selectedUnit ? {
+                                selectedRowKeys: selectedPhoneKeys,
+                                onChange: setSelectedPhoneKeys,
+                                preserveSelectedRowKeys: true,
+                            } : undefined}
+                            scroll={{ x: 720 }}
+                            locale={{
+                                emptyText: !selectedUnit
+                                    ? 'Chọn đơn vị bên trái'
+                                    : phoneSearch.trim()
+                                        ? 'Không tìm thấy mục phù hợp'
+                                        : 'Chưa có SĐT. Bấm "Thêm SĐT".',
+                            }}
+                        />
                         )}
                     </TableWrapper>
 
@@ -1231,7 +1194,7 @@ export const AdminOrgUnit = () => {
             </DrawerComponent>
 
             <Modal
-                title={editingPhone ? 'Sửa SĐT đơn vị' : 'Thêm SĐT đơn vị'}
+                title={editingPhone ? 'Sửa mục danh bạ' : 'Thêm mục danh bạ'}
                 open={isPhoneModalOpen}
                 onCancel={() => {
                     setIsPhoneModalOpen(false);
@@ -1241,9 +1204,9 @@ export const AdminOrgUnit = () => {
                 onOk={() => phoneForm.submit()}
                 confirmLoading={phoneCreateMutation.isPending || phoneUpdateMutation.isPending}
                 okText={editingPhone ? 'Lưu' : 'Thêm'}
-                width={480}
+                width={520}
             >
-                <Form form={phoneForm} layout="vertical" onFinish={handlePhoneSubmit}>
+                <Form form={phoneForm} layout="vertical" onFinish={handlePhoneSubmit} initialValues={EMPTY_PHONE_FORM}>
                     <Form.Item label="Tên hiển thị" name="displayName">
                         <Input placeholder="VD: Trực ban, Nguyễn Văn A" />
                     </Form.Item>
@@ -1266,9 +1229,52 @@ export const AdminOrgUnit = () => {
                             notFoundContent={jobPositionQuery.isLoading ? 'Đang tải...' : 'Chưa có chức vụ. Vào Danh mục chức vụ để thêm.'}
                         />
                     </Form.Item>
-                    <Form.Item label="Số điện thoại" name="phone" rules={[{ required: true, message: 'Nhập SĐT' }]}>
-                        <Input placeholder="02633888888" />
-                    </Form.Item>
+                    <Form.List
+                        name="phones"
+                        rules={[
+                            {
+                                validator: async (_, phones) => {
+                                    const valid = (phones || []).map((p) => String(p || '').trim()).filter(Boolean);
+                                    if (!valid.length) {
+                                        return Promise.reject(new Error('Nhập ít nhất 1 số điện thoại'));
+                                    }
+                                    return Promise.resolve();
+                                },
+                            },
+                        ]}
+                    >
+                        {(fields, { add, remove }, { errors }) => (
+                            <>
+                                {fields.map((field, index) => (
+                                    <Form.Item
+                                        label={index === 0 ? 'Số điện thoại' : ''}
+                                        required={index === 0}
+                                        key={field.key}
+                                    >
+                                        <Space align="baseline" style={{ display: 'flex', width: '100%' }}>
+                                            <Form.Item
+                                                {...field}
+                                                validateTrigger={['onChange', 'onBlur']}
+                                                rules={index === 0 ? [{ required: true, message: 'Nhập SĐT' }] : []}
+                                                noStyle
+                                            >
+                                                <Input placeholder={`SĐT ${index + 1}`} style={{ width: 360 }} />
+                                            </Form.Item>
+                                            {fields.length > 1 && (
+                                                <MinusCircleOutlined onClick={() => remove(field.name)} />
+                                            )}
+                                        </Space>
+                                    </Form.Item>
+                                ))}
+                                <Form.Item>
+                                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                                        Thêm số điện thoại
+                                    </Button>
+                                    <Form.ErrorList errors={errors} />
+                                </Form.Item>
+                            </>
+                        )}
+                    </Form.List>
                     <Form.Item label="Thứ tự" name="sortOrder">
                         <InputNumber min={0} style={{ width: '100%' }} />
                     </Form.Item>
